@@ -6,9 +6,11 @@
 
 // See also: https://www.mathworks.com/help/fixedpoint/examples/implement-fixed-point-square-root-using-lookup-table.html
 
-#define SQRT_LUT_SIZE_BITS          12
+#define SQRT_LUT_SIZE_BITS          8
 #define SQRT_LUT_SIZE               ((1<<SQRT_LUT_SIZE_BITS)-(1<<(SQRT_LUT_SIZE_BITS-2)))
 #define SQRT_LUT_VAL_BITS           16
+
+#define SQRT_LUT_VAL_MULT           (1<<SQRT_LUT_VAL_BITS)
 
 // This table has square root values for all x where 0.5 <= x < 2.0
 
@@ -46,15 +48,25 @@ unsigned int sqrt_int(unsigned int s)
     int bits = 32-lz_adj;
 
     // Drop the fractional bits or add significant bits so that we fit in the range of the LUT.
-    s = (bits > SQRT_LUT_SIZE_BITS) ? s >> (bits - SQRT_LUT_SIZE_BITS) : s << (SQRT_LUT_SIZE_BITS - bits);
+    int lut_addr = (bits > SQRT_LUT_SIZE_BITS) ? s >> (bits - SQRT_LUT_SIZE_BITS) : s << (SQRT_LUT_SIZE_BITS - bits);
+    // Table starts at 0.5, subtract offset.
+    lut_addr = lut_addr - (1<<(SQRT_LUT_SIZE_BITS-2));
 
-    // Look up sqrt between 0.5 and 2.0. Table starts at 0.5, subtract offset.
-    int lut_addr = s - (1<<(SQRT_LUT_SIZE_BITS-2));
+    unsigned long lut_val        = sqrt_lut[lut_addr];
+    unsigned long lut_val_next   = sqrt_lut[lut_addr+1];
 
-    int lut_val        = sqrt_lut[lut_addr];
-    int lut_val_next   = sqrt_lut[lut_addr+1];
+    unsigned int frac = (bits >= SQRT_LUT_SIZE_BITS+4) ? (s >> (bits - SQRT_LUT_SIZE_BITS - 4)) & 0x0f  :
+                        (bits >= SQRT_LUT_SIZE_BITS)   ? (s << (SQRT_LUT_SIZE_BITS+4 - bits))   & 0x0f :
+                                                         0;
+    frac = 0;
 
-    unsigned r = lut_val << (bits/2);
+    lut_val      = lut_val      << (bits/2);
+    lut_val_next = lut_val_next << (bits/2);
+
+    unsigned long lut_val_avg = (lut_val * (16-frac) + lut_val_next * frac) / 16;
+//    unsigned long lut_val_avg = lut_val;
+
+    unsigned r = lut_val_avg;
 
     return r;
 }
@@ -62,14 +74,14 @@ unsigned int sqrt_int(unsigned int s)
 
 float sqrt_fp32(float s)
 {
-    float r = sqrt_int(s*65536.0) / 256.0 / 65536.0;
+    float r = sqrt_int(s* (float)(SQRT_LUT_VAL_MULT)) / sqrt(SQRT_LUT_VAL_MULT) / SQRT_LUT_VAL_MULT;
     
     return r;
 }
 
-void test_int(unsigned int s)
+void test_sqrt(unsigned int s)
 {
-    printf("%d: %f, %f\n", s, sqrt(s), sqrt_int(s)/65536.0);
+    printf("%d: %f, %f\n", s, sqrt(s), sqrt_fp32(s));
 }
 
 void test_deviation()
@@ -77,7 +89,7 @@ void test_deviation()
     float max_dev = 0.0;
     int max_int= 0;
 
-    for(int i=1;i<65536;++i){
+    for(int i=1;i<1024;++i){
         float s  = sqrt(i);
         float fs = sqrt_fp32(i);
 
@@ -99,10 +111,15 @@ int main(int argc, char **argv)
 
     test_deviation();
 
-    test_int(16);
-    test_int(32);
-    test_int(256);
-    test_int(2048);
+    test_sqrt(16);
+    test_sqrt(32);
+    test_sqrt(48);
+    test_sqrt(256);
+    test_sqrt(511);
+    test_sqrt(512);
+    test_sqrt(2048);
+    test_sqrt(32768);
+    test_sqrt(32769);
 }
 
 
