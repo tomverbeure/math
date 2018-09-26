@@ -9,6 +9,7 @@
 #define SQRT_LUT_SIZE_BITS          8
 #define SQRT_LUT_SIZE               ((1<<SQRT_LUT_SIZE_BITS)-(1<<(SQRT_LUT_SIZE_BITS-2)))
 #define SQRT_LUT_VAL_BITS           16
+#define SQRT_FRAC_BITS              8
 
 #define SQRT_LUT_VAL_MULT           (1<<SQRT_LUT_VAL_BITS)
 
@@ -55,15 +56,16 @@ unsigned int sqrt_int(unsigned int s)
     unsigned long lut_val        = sqrt_lut[lut_addr];
     unsigned long lut_val_next   = sqrt_lut[lut_addr+1];
 
-    unsigned int frac = (bits >= SQRT_LUT_SIZE_BITS+4) ? (s >> (bits - SQRT_LUT_SIZE_BITS - 4)) & 0x0f  :
-                        (bits >= SQRT_LUT_SIZE_BITS)   ? (s << (SQRT_LUT_SIZE_BITS+4 - bits))   & 0x0f :
+    unsigned int frac = (bits >= SQRT_LUT_SIZE_BITS+SQRT_FRAC_BITS) ? (s >> (bits - SQRT_LUT_SIZE_BITS - SQRT_FRAC_BITS)) & ((1<<SQRT_FRAC_BITS)-1)  :
+                        (bits >= SQRT_LUT_SIZE_BITS)   ? (s << (SQRT_LUT_SIZE_BITS+SQRT_FRAC_BITS - bits))   & ((1<<SQRT_FRAC_BITS)-1) :
                                                          0;
-    frac = 0;
 
     lut_val      = lut_val      << (bits/2);
     lut_val_next = lut_val_next << (bits/2);
 
-    unsigned long lut_val_avg = (lut_val * (16-frac) + lut_val_next * frac) / 16;
+    unsigned long lut_val_avg = (lut_val * ((1<<SQRT_FRAC_BITS)-frac) + lut_val_next * frac) / (1<<SQRT_FRAC_BITS);
+
+//    lut_val_avg      = lut_val_avg      << (bits/2);
 
     unsigned r = lut_val_avg;
 
