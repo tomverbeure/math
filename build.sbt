@@ -8,7 +8,8 @@ lazy val root = (project in file(".")).
     )),
     name := "superproject"
   ).dependsOn(vexRiscv)
-//lazy val vexRiscv = RootProject(uri("git://github.com/SpinalHDL/VexRiscv.git"))
+
+lazy val vexRiscv = RootProject(uri("git://github.com/SpinalHDL/VexRiscv.git"))
 
 //If you want a specific git commit : 
 //lazy val vexRiscv = RootProject(uri("git://github.com/SpinalHDL/VexRiscv.git#commitHash"))
