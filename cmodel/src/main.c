@@ -12,13 +12,13 @@
 
 #define SQRT_LUT_VAL_MULT           (1<<SQRT_LUT_VAL_BITS)
 
-// This table has square root values for all x where 0.5 <= x < 2.0
-
-unsigned sqrt_lut[SQRT_LUT_SIZE];
+// This table has square root values for all x where 0.5 <= x <= 2.0
+// The +1 is added to allow easy lookup of the next value when doing interpolation.
+unsigned sqrt_lut[SQRT_LUT_SIZE+1];
 
 void init_sqrt_lut()
 {
-    for(int i=0;i<SQRT_LUT_SIZE;++i){
+    for(int i=0;i<SQRT_LUT_SIZE+1;++i){
         sqrt_lut[i] = sqrt(((1<<(SQRT_LUT_SIZE_BITS-2)) + i)/(float)(1<<(SQRT_LUT_SIZE_BITS-1))) * (1<<SQRT_LUT_VAL_BITS);
     }
 }
@@ -64,7 +64,6 @@ unsigned int sqrt_int(unsigned int s)
     lut_val_next = lut_val_next << (bits/2);
 
     unsigned long lut_val_avg = (lut_val * (16-frac) + lut_val_next * frac) / 16;
-//    unsigned long lut_val_avg = lut_val;
 
     unsigned r = lut_val_avg;
 
@@ -87,21 +86,23 @@ void test_sqrt(unsigned int s)
 void test_deviation()
 {
     float max_dev = 0.0;
-    int max_int= 0;
+    float max_in  = 0;
 
-    for(int i=1;i<1024;++i){
-        float s  = sqrt(i);
-        float fs = sqrt_fp32(i);
+    for(int i=1;i<1000000;++i){
+        float f = i/65536.0;
+
+        float s  = sqrt(f);
+        float fs = sqrt_fp32(f);
 
         float dev = fabs((fs - s)/s);
 
         if (dev>max_dev){
             max_dev = dev;
-            max_int = i;
+            max_in  = f;
         }
     }
 
-    printf("%d: %f, %f (%f%%)\n", max_int, sqrt(max_int), sqrt_fp32(max_int), max_dev*100);
+    printf("%f: %f, %f (%f%%)\n", max_in , sqrt(max_in), sqrt_fp32(max_in), max_dev*100);
 }
 
 
