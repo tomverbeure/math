@@ -17,7 +17,7 @@ public:
         m       = 0;
     }
 
-    operator float () {
+    operator float () const {
         int e = exp == 0 ? 0 : (exp - zero_offset + ((1<<7)-1) ) & 0xff;
 
         union {
@@ -51,11 +51,22 @@ public:
         return *this;
     }
 
-    bool is_zero() {
+    bool is_zero() const {
         return exp == 0;
     }
 
     friend fpxx<_m_size, _exp_size, _zero_offset>  operator+(const fpxx<_m_size, _exp_size, _zero_offset> left, const fpxx<_m_size, _exp_size, _zero_offset> right) {
+        fpxx<_m_size, _exp_size, _zero_offset> r;
+
+        if (left.is_zero())
+            return right;
+
+        if (right.is_zero())
+            return left;
+
+        r = (float)left + (float)right;
+
+        return r;
     }
 
     void print_bits() {
