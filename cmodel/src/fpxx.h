@@ -95,7 +95,7 @@ public:
             }
         }
 
-        if (m_add & (1<<(_m_size+2))){
+        if (m_add & (1<<(_m_size+1))){
             e_add += 1;
             m_add >>= 1;
         }
