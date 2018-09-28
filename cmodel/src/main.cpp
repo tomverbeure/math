@@ -138,6 +138,8 @@ int main(int argc, char **argv)
     cout << endl;
     cout << my_fp.m_size << "," << my_fp.exp_size << endl;
 
+    my_fp = 0;
+    cout << "zero:" << my_fp << endl;
 
     float f = 0.00001;
     for(int i=0;i<12;++i){

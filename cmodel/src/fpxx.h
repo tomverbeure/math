@@ -18,7 +18,7 @@ public:
     }
 
     operator float () {
-        int e = (exp - zero_offset + ((1<<7)-1) ) & 0xff;
+        int e = exp == 0 ? 0 : (exp - zero_offset + ((1<<7)-1) ) & 0xff;
 
         union {
             float       f;
@@ -44,11 +44,18 @@ public:
         unsigned f_m    = fi.i & 0x7fffff;
 
         sign    = f_s;
-        exp     = (f_e - ((1<<7)-1) + zero_offset) ;
+        exp     = f_e == 0 ? 0 : (f_e - ((1<<7)-1) + zero_offset) ;
         exp     = exp << (32-exp_size) >> (32-exp_size);
         m       = f_m >> (23-m_size);
 
         return *this;
+    }
+
+    bool is_zero() {
+        return exp == 0;
+    }
+
+    friend fpxx<_m_size, _exp_size, _zero_offset>  operator+(const fpxx<_m_size, _exp_size, _zero_offset> left, const fpxx<_m_size, _exp_size, _zero_offset> right) {
     }
 
     void print_bits() {
@@ -62,7 +69,6 @@ public:
             printf("%d", (m>>i)&1);
         }
     }
-
 
 };
 
