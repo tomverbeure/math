@@ -13,6 +13,7 @@ bin_dir    := ./
 sources := $(wildcard $(source_dir)/*.cpp)
 objects := $(sources:$(source_dir)/%.cpp=$(build_dir)/%.o)
 
+CC       := g++
 CPPFLAGS := $(display_string) -I$(header_dir) -MMD -MP -O0 -g
 LDLIBS   := -lm
 

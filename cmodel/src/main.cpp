@@ -4,6 +4,10 @@
 #include <math.h>
 #include <assert.h>
 
+#include <iostream>
+
+using namespace std;
+
 // See also: https://www.mathworks.com/help/fixedpoint/examples/implement-fixed-point-square-root-using-lookup-table.html
 
 #define SQRT_LUT_SIZE_BITS          8
