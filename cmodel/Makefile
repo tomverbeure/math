@@ -14,7 +14,7 @@ sources := $(wildcard $(source_dir)/*.cpp)
 objects := $(sources:$(source_dir)/%.cpp=$(build_dir)/%.o)
 
 CC       := g++
-CPPFLAGS := $(display_string) -I$(header_dir) -MMD -MP -O0 -g
+CPPFLAGS := $(display_string) -I$(header_dir) -MMD -MP -O0 -g -std=c++11
 LDLIBS   := -lm
 
 $(bin_dir)/math: $(objects) | $(bin_dir)
@@ -28,3 +28,5 @@ $(build_dir) $(bin_dir): ; mkdir $@
 clean: ; $(RM) -r math $(objects) $(deps) $(build_dir)
 
 -include $(deps)
+
+build/main.o: src/fpxx.h

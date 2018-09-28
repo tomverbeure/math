@@ -6,6 +6,8 @@
 
 #include <iostream>
 
+#include <fpxx.h>
+
 using namespace std;
 
 // See also: https://www.mathworks.com/help/fixedpoint/examples/implement-fixed-point-square-root-using-lookup-table.html
@@ -108,12 +110,14 @@ void test_deviation()
     printf("%d: %f, %f (%f%%)\n", max_int, sqrt(max_int), sqrt_fp32(max_int), max_dev*100);
 }
 
-
 int main(int argc, char **argv)
 {
+#if 0
     init_sqrt_lut();
 
+    cout << endl;
     test_deviation();
+    cout << endl;
 
     test_sqrt(16);
     test_sqrt(32);
@@ -124,6 +128,20 @@ int main(int argc, char **argv)
     test_sqrt(2048);
     test_sqrt(32768);
     test_sqrt(32769);
+#endif
+
+    fpxx<17,5> my_fp;
+
+    cout << endl;
+    cout << my_fp.m_size << "," << my_fp.exp_size << endl;
+
+
+    float f = 0.00001;
+    for(int i=0;i<12;++i){
+        my_fp = f;
+        cout << f << "," << my_fp << " " << (fabs(f/my_fp)-1.0) << endl;
+        f *= 10;
+    }
 }
 
 
