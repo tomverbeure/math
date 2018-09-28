@@ -64,7 +64,51 @@ public:
         if (right.is_zero())
             return left;
 
-        r = (float)left + (float)right;
+        int m_left  = (1 << _m_size) | left.m;
+        int m_right = (1 << _m_size) | right.m;
+
+        int s_add;
+        int e_add;
+        int m_add;
+
+        if (left.exp > right.exp){
+            e_add   = left.exp;
+            m_right >>= (left.exp - right.exp);
+        }
+        else{
+            e_add   = right.exp;
+            m_left >>= (right.exp - left.exp);
+        }
+
+        if (left.sign == right.sign){
+            s_add = left.sign;
+            m_add = m_left + m_right;
+        }
+        else{
+            if (m_left > m_right){
+                s_add = left.sign;
+                m_add = m_left - m_right;
+            }
+            else{
+                s_add = right.sign;
+                m_add = m_right - m_left;
+            }
+        }
+
+        if (m_add & (1<<(_m_size+2))){
+            e_add += 1;
+            m_add >>= 1;
+        }
+        else{
+            while((m_add & (1<<_m_size)) == 0 && e_add != 0){
+                e_add -= 1;
+                m_add << 1;
+            }
+        }
+
+        r.sign = s_add;
+        r.exp  = e_add;
+        r.m    = m_add & ((1<<_m_size)-1);
 
         return r;
     }

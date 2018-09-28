@@ -82,7 +82,7 @@ unsigned int sqrt_int(unsigned int s)
 float sqrt_fp32(float s)
 {
     float r = sqrt_int(s* (float)(SQRT_LUT_VAL_MULT)) / sqrt(SQRT_LUT_VAL_MULT) / SQRT_LUT_VAL_MULT;
-    
+
     return r;
 }
 
