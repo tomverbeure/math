@@ -113,6 +113,57 @@ void test_deviation()
     printf("%f: %f, %f (%f%%)\n", max_in , sqrt(max_in), sqrt_fp32(max_in), max_dev*100);
 }
 
+float random_float()
+{
+    union {
+        float       f;
+        unsigned    i;
+    } fi;
+
+    fi.i = random();
+
+    return fi.f;
+}
+
+bool check_normal(float f)
+{
+    bool normal = isnormal(f) || (f == 0.0f);
+
+    return normal;
+}
+
+bool stress_fpxx()
+{
+    // Check that fpxx<23,8> has the same results as fp32 for regular numbers (no denormals)
+    fpxx<23,8> fpxx_a;
+    fpxx<23,8> fpxx_b;
+    fpxx<23,8> fpxx_r;
+
+    for(int i=0;i<1000;++i){
+        float fp32_a = random_float();
+        float fp32_b = random_float();
+        float fp32_r;
+
+        if (!check_normal(fp32_a) && !check_normal(fp32_b)){
+            continue;
+        }
+
+        fp32_r = fp32_a + fp32_b;
+
+        fpxx_a = fp32_a;
+        fpxx_b = fp32_b;
+
+        fpxx_r = fpxx_a * fpxx_b;
+
+        if (fp32_r != fpxx_r){
+            printf("Mismatch: fp32 %f != fpxx %f\n", fp32_r, (float)fpxx_r);
+            assert(0);
+        }
+    }
+
+    return true;
+}
+
 int main(int argc, char **argv)
 {
 #if 0
@@ -133,10 +184,12 @@ int main(int argc, char **argv)
     test_sqrt(32769);
 #endif
 
+    stress_fpxx();
+
     fpxx<17,5> my_fp, left, right;
 
     cout << endl;
-    cout << my_fp.m_size << "," << my_fp.exp_size << endl;
+    cout << my_fp.m_size() << "," << my_fp.exp_size() << endl;
 
     my_fp = 0;
     cout << "zero:" << my_fp << endl;

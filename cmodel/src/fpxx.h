@@ -3,10 +3,6 @@ template <int _m_size, int _exp_size, int _zero_offset = ((1<<(_exp_size-1))-1)>
 class fpxx {
 
 public:
-    const int exp_size      = _exp_size;
-    const int m_size        = _m_size;
-    const int zero_offset   = _zero_offset;
-
     bool        sign;
     unsigned    exp;
     unsigned    m;
@@ -18,14 +14,14 @@ public:
     }
 
     operator float () const {
-        int e = exp == 0 ? 0 : (exp - zero_offset + ((1<<7)-1) ) & 0xff;
+        int e = exp == 0 ? 0 : (exp - _zero_offset + ((1<<7)-1) ) & 0xff;
 
         union {
             float       f;
             unsigned    i;
         } fi;
 
-        fi.i = (sign << 31) | (e<<23) | (m << (23-m_size));
+        fi.i = (sign << 31) | (e<<23) | (m << (23-_m_size));
 
         return fi.f;
     }
@@ -44,11 +40,24 @@ public:
         unsigned f_m    = fi.i & 0x7fffff;
 
         sign    = f_s;
-        exp     = f_e == 0 ? 0 : (f_e - ((1<<7)-1) + zero_offset) ;
-        exp     = exp << (32-exp_size) >> (32-exp_size);
-        m       = f_m >> (23-m_size);
+        exp     = f_e == 0 ? 0 : (f_e - ((1<<7)-1) + _zero_offset) ;
+        exp     = exp << (32-_exp_size) >> (32-_exp_size);
+        m       = f_m >> (23-_m_size);
 
         return *this;
+    }
+
+    int zero_offset() {
+        return _zero_offset;
+    }
+
+    int m_size() {
+        return _m_size;
+    }
+
+    int exp_size() {
+
+        return _exp_size;
     }
 
     bool is_zero() const {
@@ -116,11 +125,11 @@ public:
     void print_bits() {
         printf("%d ", sign);
 
-        for(int i=exp_size-1;i>=0;--i){
+        for(int i=_exp_size-1;i>=0;--i){
             printf("%d", (exp>>i)&1);
         }
         printf(" ");
-        for(int i=m_size-1;i>=0;--i){
+        for(int i=_m_size-1;i>=0;--i){
             printf("%d", (m>>i)&1);
         }
     }
