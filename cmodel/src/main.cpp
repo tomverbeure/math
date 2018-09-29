@@ -185,7 +185,7 @@ bool stress_fpxx()
             continue;
         }
 
-        fp32_r = fp32_a + fp32_b;
+        fp32_r = fp32_a * fp32_b;
 
         if (!check_normal(fp32_r)){
             continue;
@@ -194,10 +194,10 @@ bool stress_fpxx()
         fpxx_a = fp32_a;
         fpxx_b = fp32_b;
 
-        fpxx_r = fpxx_a + fpxx_b;
+        fpxx_r = fpxx_a * fpxx_b;
 
-        if (fp32_r != fpxx_r && abs(fpxx_r.mant() - float_mant(fp32_r)) > 1){
-            printf("Mismatch: %d: fp32 %f != fpxx %f\n", i, fp32_r, (float)fpxx_r);
+        if (fp32_r != fpxx_r && abs(fpxx_r.mant() - float_mant(fp32_r)) > 2){
+            printf("Mismatch: %ld: fp32 %f != fpxx %f\n", i, fp32_r, (float)fpxx_r);
             printf("fp32_a: %f\n", fp32_a);
             printf("fp32_b: %f\n", fp32_b);
             printf("fpxx_a: %f\n", (float)fpxx_a);

@@ -48,6 +48,12 @@ public:
         return *this;
     }
 
+    void set_zero() {
+        sign = 0;
+        exp  = 0;
+        m    = 0;
+    }
+
     int zero_offset() {
         return _zero_offset;
     }
@@ -123,6 +129,47 @@ public:
         r.sign = s_add;
         r.exp  = e_add;
         r.m    = m_add & ((1<<_m_size)-1);
+
+        return r;
+    }
+
+    friend fpxx<_m_size, _exp_size, _zero_offset>  operator*(const fpxx<_m_size, _exp_size, _zero_offset> left, const fpxx<_m_size, _exp_size, _zero_offset> right) {
+        fpxx<_m_size, _exp_size, _zero_offset> r;
+
+        if (left.is_zero() || right.is_zero()){
+            r.set_zero();
+            return r;
+        }
+
+        int m_left  = (1 << _m_size) | left.m;
+        int m_right = (1 << _m_size) | right.m;
+
+        int      s_mul = left.sign ^ right.sign;
+        int      e_mul = ((left.exp - _zero_offset) + (right.exp - _zero_offset)) + 1 + _zero_offset;
+        long int m_mul;
+
+        m_mul = (long)m_left * (long)m_right;
+        m_mul >>= (_m_size+1);
+
+        if (e_mul < 0){
+            r.set_zero();
+            return r;
+        }
+
+        if (m_mul & (1<<(_m_size+1))){
+            e_mul += 1;
+            m_mul >>= 1;
+        }
+        else{
+            while((m_mul & (1<<_m_size)) == 0 && e_mul != 0){
+                e_mul -= 1;
+                m_mul <<= 1;
+            }
+        }
+
+        r.sign = s_mul;
+        r.exp  = e_mul;
+        r.m    = m_mul & ((1<<_m_size)-1);
 
         return r;
     }
