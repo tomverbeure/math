@@ -174,6 +174,25 @@ public:
         return r;
     }
 
+    friend fpxx<_m_size, _exp_size, _zero_offset>  operator/(const fpxx<_m_size, _exp_size, _zero_offset> left, const fpxx<_m_size, _exp_size, _zero_offset> right) {
+
+        fpxx<_m_size, _exp_size, _zero_offset> r;
+
+        r = (float)left / (float)right;
+
+        return r;
+    }
+
+    friend fpxx<_m_size, _exp_size, _zero_offset>  sqrt(const fpxx<_m_size, _exp_size, _zero_offset> op){
+
+        fpxx<_m_size, _exp_size, _zero_offset> r;
+
+        r = sqrt((float)op);
+
+        return r;
+    }
+
+
     void print_bits() {
         printf("%d ", sign);
 
