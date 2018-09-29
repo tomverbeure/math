@@ -252,7 +252,7 @@ int main(int argc, char **argv)
     float f = 0.00001;
     for(int i=0;i<12;++i){
         my_fp = f;
-        cout << f << "," << my_fp << " " << (fabs(f/my_fp)-1.0) << endl;
+        cout << f << "," << my_fp << " " << (fabs(f/(float)my_fp)-1.0) << endl;
         f *= 10;
     }
 }
