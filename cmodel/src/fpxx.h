@@ -102,7 +102,7 @@ public:
         else{
             while((m_add & (1<<_m_size)) == 0 && e_add != 0){
                 e_add -= 1;
-                m_add << 1;
+                m_add <<= 1;
             }
         }
 
