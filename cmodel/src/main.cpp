@@ -113,16 +113,38 @@ void test_deviation()
     printf("%f: %f, %f (%f%%)\n", max_in , sqrt(max_in), sqrt_fp32(max_in), max_dev*100);
 }
 
-float random_float()
+unsigned int float_as_int(float f)
 {
     union {
         float       f;
         unsigned    i;
     } fi;
 
-    fi.i = random();
+    fi.f = f;
+
+    return fi.i;
+}
+
+float int_as_float(unsigned i)
+{
+    union {
+        float       f;
+        unsigned    i;
+    } fi;
+
+    fi.i = i;
 
     return fi.f;
+}
+
+int float_mant(float f)
+{
+    return float_as_int(f) & 0x7fffff;
+}
+
+float random_float()
+{
+    return int_as_float(random());
 }
 
 bool check_normal(float f)
@@ -132,6 +154,21 @@ bool check_normal(float f)
     return normal;
 }
 
+void print_bits(float f) 
+{
+    unsigned int fi = float_as_int(f);
+
+    printf("%d ", fi>>31);
+
+    for(int i=30;i>=23;--i){
+        printf("%d", (fi>>i)&1);
+    }
+    printf(" ");
+    for(int i=22;i>=0;--i){
+        printf("%d", (fi>>i)&1);
+    }
+}
+
 bool stress_fpxx()
 {
     // Check that fpxx<23,8> has the same results as fp32 for regular numbers (no denormals)
@@ -139,24 +176,36 @@ bool stress_fpxx()
     fpxx<23,8> fpxx_b;
     fpxx<23,8> fpxx_r;
 
-    for(int i=0;i<1000;++i){
+    for(long int i=0;i<10000000;++i){
         float fp32_a = random_float();
         float fp32_b = random_float();
         float fp32_r;
 
-        if (!check_normal(fp32_a) && !check_normal(fp32_b)){
+        if (!check_normal(fp32_a) || !check_normal(fp32_b)){
             continue;
         }
 
         fp32_r = fp32_a + fp32_b;
 
+        if (!check_normal(fp32_r)){
+            continue;
+        }
+
         fpxx_a = fp32_a;
         fpxx_b = fp32_b;
 
-        fpxx_r = fpxx_a * fpxx_b;
+        fpxx_r = fpxx_a + fpxx_b;
 
-        if (fp32_r != fpxx_r){
-            printf("Mismatch: fp32 %f != fpxx %f\n", fp32_r, (float)fpxx_r);
+        if (fp32_r != fpxx_r && abs(fpxx_r.mant() - float_mant(fp32_r)) > 1){
+            printf("Mismatch: %d: fp32 %f != fpxx %f\n", i, fp32_r, (float)fpxx_r);
+            printf("fp32_a: %f\n", fp32_a);
+            printf("fp32_b: %f\n", fp32_b);
+            printf("fpxx_a: %f\n", (float)fpxx_a);
+            printf("fpxx_b: %f\n", (float)fpxx_b);
+            print_bits(fp32_r);
+            printf("\n");
+            fpxx_r.print_bits();
+            printf("\n");
             assert(0);
         }
     }

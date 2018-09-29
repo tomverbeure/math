@@ -1,4 +1,5 @@
 
+
 template <int _m_size, int _exp_size, int _zero_offset = ((1<<(_exp_size-1))-1)>
 class fpxx {
 
@@ -64,6 +65,10 @@ public:
         return exp == 0;
     }
 
+    int mant() const {
+        return m;
+    }
+
     friend fpxx<_m_size, _exp_size, _zero_offset>  operator+(const fpxx<_m_size, _exp_size, _zero_offset> left, const fpxx<_m_size, _exp_size, _zero_offset> right) {
         fpxx<_m_size, _exp_size, _zero_offset> r;
 
@@ -82,11 +87,11 @@ public:
 
         if (left.exp > right.exp){
             e_add   = left.exp;
-            m_right >>= (left.exp - right.exp);
+            m_right = (left.exp - right.exp) >= 32 ? 0 : m_right >> (left.exp - right.exp);
         }
         else{
             e_add   = right.exp;
-            m_left >>= (right.exp - left.exp);
+            m_left  = (right.exp - left.exp) >= 32 ? 0 : m_left  >> (right.exp - left.exp);
         }
 
         if (left.sign == right.sign){
