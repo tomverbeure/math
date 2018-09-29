@@ -14,21 +14,7 @@ public:
         m       = 0;
     }
 
-    operator float () const {
-        int e = exp == 0 ? 0 : (exp - _zero_offset + ((1<<7)-1) ) & 0xff;
-
-        union {
-            float       f;
-            unsigned    i;
-        } fi;
-
-        fi.i = (sign << 31) | (e<<23) | (m << (23-_m_size));
-
-        return fi.f;
-    }
-
-    fpxx operator=(float f) {
-
+    void float_to_this(float f) {
         union {
             float       f;
             unsigned    i;
@@ -44,8 +30,35 @@ public:
         exp     = f_e == 0 ? 0 : (f_e - ((1<<7)-1) + _zero_offset) ;
         exp     = exp << (32-_exp_size) >> (32-_exp_size);
         m       = f_m >> (23-_m_size);
+    }
+
+
+    fpxx(float f){
+        float_to_this(f);
+    }
+
+    fpxx operator=(float f) {
+
+        float_to_this(f);
 
         return *this;
+    }
+
+    float to_float() const {
+        int e = exp == 0 ? 0 : (exp - _zero_offset + ((1<<7)-1) ) & 0xff;
+
+        union {
+            float       f;
+            unsigned    i;
+        } fi;
+
+        fi.i = (sign << 31) | (e<<23) | (m << (23-_m_size));
+
+        return fi.f;
+    }
+
+    operator float () const {
+        return to_float();
     }
 
     void set_zero() {
@@ -179,6 +192,13 @@ public:
         fpxx<_m_size, _exp_size, _zero_offset> r;
 
         r = (float)left / (float)right;
+
+        return r;
+    }
+
+    friend bool operator< (const fpxx<_m_size, _exp_size, _zero_offset> left, const fpxx<_m_size, _exp_size, _zero_offset> right) {
+
+        bool r = (float)left < (float)right;
 
         return r;
     }
