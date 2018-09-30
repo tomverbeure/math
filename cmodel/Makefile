@@ -29,4 +29,4 @@ clean: ; $(RM) -r math $(objects) $(deps) $(build_dir)
 
 -include $(deps)
 
-build/main.o: src/fpxx.h src/misc.h
+build/main.o: Makefile src/fpxx.h src/misc.h

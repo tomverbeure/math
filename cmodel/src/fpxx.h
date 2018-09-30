@@ -271,7 +271,6 @@ public:
         static sqrt_lut_entry_t sqrt_lut[FPXX_SQRT_LUT_SIZE];
 
         if (!init){
-            int max_shift = 0;
             for(int i=0;i<FPXX_SQRT_LUT_SIZE;++i){
                 float fin     = (float)((1<<(FPXX_SQRT_LUT_SIZE_BITS-2)) + i)/(1<<(FPXX_SQRT_LUT_SIZE_BITS-1));
 
@@ -286,8 +285,6 @@ public:
 
                 sqrt_lut[i].mant  = mant >> (23-FPXX_SQRT_LUT_MANT_BITS);
                 sqrt_lut[i].shift = shift;
-
-                max_shift = shift > max_shift ? shift : max_shift;
             }
             init = true;
         }
@@ -300,21 +297,25 @@ public:
 
         sqrt_lut_entry_t lut_val = sqrt_lut[lut_addr];
 
-#if 1
+#if 0
         std::cout << std::endl;
-        std::cout << "lut_size:" << FPXX_SQRT_LUT_SIZE << std::endl;
         std::cout << "op:" << (float)op << std::endl;
         std::cout << "gt_1:" << gt_1 << std::endl;
-        std::cout << "lut_addr:" << lut_addr << std::endl;
-        std::cout << "lut_val.mant:" << lut_val.mant << std::endl << std::endl;
+        std::cout << "lut_val.mant: " << lut_val.mant << std::endl;
+        std::cout << "lut_val.shift:" << lut_val.shift << std::endl;
+        std::cout << std::endl;
 #endif
 
         fpxx<_m_size, _exp_size, _zero_offset> r;
 
         r = 1.0/sqrt((float)op);
 
+        int shift_adj = lut_val.shift == -1 ?  0  : 
+                        lut_val.shift ==  0 ?  0  : 
+                        lut_val.shift ==  1 ?  -1 : -100;
+
         r.sign  = false;
-        r.exp   = -(op.exp - _zero_offset)/2 + 1 + lut_val.shift + _zero_offset;
+        r.exp   = -(op.exp - _zero_offset)/2 + shift_adj + _zero_offset;
         r.m     = lut_val.mant << (_m_size-FPXX_SQRT_LUT_MANT_BITS);
 
 

@@ -214,17 +214,31 @@ int main(int argc, char **argv)
 
     fpxx<17,5> my_fp, left, right;
 
+    cout << "--------------" << endl;
     left = 0.5;
     cout << left << " r_sqrt: " << 1.0/sqrt((float)left) << "," << recip_sqrt(left) << endl;
+
+    cout << "--------------" << endl;
     left = 1;
     cout << left << " r_sqrt: " << 1.0/sqrt((float)left) << "," << recip_sqrt(left) << endl;
+
+    cout << "--------------" << endl;
     left = 1.5;
     cout << left << " r_sqrt: " << 1.0/sqrt((float)left) << "," << recip_sqrt(left) << endl;
+
+    cout << "--------------" << endl;
+    left = 1.999;
+    cout << left << " r_sqrt: " << 1.0/sqrt((float)left) << "," << recip_sqrt(left) << endl;
+
+    cout << "--------------" << endl;
     left = 2;
     cout << left << " r_sqrt: " << 1.0/sqrt((float)left) << "," << recip_sqrt(left) << endl;
+
     left = 100;
     cout << left << " r_sqrt: " << 1.0/sqrt((float)left) << "," << recip_sqrt(left) << endl;
     left = 150;
+    cout << left << " r_sqrt: " << 1.0/sqrt((float)left) << "," << recip_sqrt(left) << endl;
+    left = 190;
     cout << left << " r_sqrt: " << 1.0/sqrt((float)left) << "," << recip_sqrt(left) << endl;
     left = 1000;
     cout << left << " r_sqrt: " << 1.0/sqrt((float)left) << "," << recip_sqrt(left) << endl;
@@ -234,6 +248,8 @@ int main(int argc, char **argv)
     cout << left << " r_sqrt: " << 1.0/sqrt((float)left) << "," << recip_sqrt(left) << endl;
 
     cout << endl;
+
+#if 0
     cout << my_fp.m_size() << "," << my_fp.exp_size() << endl;
 
     my_fp = 0;
@@ -252,6 +268,7 @@ int main(int argc, char **argv)
         cout << f << "," << my_fp << " " << (fabs(f/(float)my_fp)-1.0) << endl;
         f *= 10;
     }
+#endif
 }
 
 
