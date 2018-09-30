@@ -21,9 +21,17 @@ Articles on square root:
 
 Articles on reduced precision floating point
 
+* [Variable Precision Floating Point Division and Square Root](http://www.dtic.mil/dtic/tr/fulltext/u2/a433087.pdf)
+
+    Very interesting presentation on how to create division and square root on FPGA.
+
 * [Simplified Floating Point for DSP](https://people.ece.cornell.edu/land/courses/ece5760/FloatingPoint/index.html)
 
     Cornell student project with C code and Verilog.
+
+* [Float Point Core generator](http://perso.citi-lab.fr/fdedinec/recherche/2013-HiPEAC-Tutorial-FloPoCo/)
+
+    Create custom VHDL floating point cores of variable size.
 
 Articles on two-complement floating point
 
