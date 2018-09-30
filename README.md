@@ -3,6 +3,10 @@ Math functions.
 
 Articles on square root:
 
+* [Implement Fixed-Point Square Root Using Lookup Table](https://www.mathworks.com/help/fixedpoint/examples/implement-fixed-point-square-root-using-lookup-table.html)
+
+    Main resource.
+
 * [Methods of Computing Square Roots](https://en.wikipedia.org/wiki/Methods_of_computing_square_roots)
 
     Wikipedia.

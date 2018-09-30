@@ -7,6 +7,7 @@
 #include <iostream>
 
 #include <fpxx.h>
+#include <misc.h>
 
 using namespace std;
 
@@ -31,18 +32,6 @@ void init_sqrt_lut()
 }
 
 
-// https://codingforspeed.com/counting-the-number-of-leading-zeros-for-a-32-bit-integer-signed-or-unsigned/
-int leading_zeros(int x)
-{
-    unsigned n = 0;
-    const unsigned bits = sizeof(x) * 8;
-    for (int i = 1; i < bits; i ++) {
-        if (x < 0) break;
-        n++;
-        x <<= 1;
-    }
-    return n;
-}
 
 // Input: integer
 // Output: integer with 16 fractional bits
@@ -113,18 +102,6 @@ void test_deviation()
     printf("%f: %f, %f (%f%%)\n", max_in , sqrt(max_in), sqrt_fp32(max_in), max_dev*100);
 }
 
-unsigned int float_as_int(float f)
-{
-    union {
-        float       f;
-        unsigned    i;
-    } fi;
-
-    fi.f = f;
-
-    return fi.i;
-}
-
 float int_as_float(unsigned i)
 {
     union {
@@ -154,7 +131,7 @@ bool check_normal(float f)
     return normal;
 }
 
-void print_bits(float f) 
+void print_bits(float f)
 {
     unsigned int fi = float_as_int(f);
 
@@ -233,9 +210,18 @@ int main(int argc, char **argv)
     test_sqrt(32769);
 #endif
 
-    stress_fpxx();
+//    stress_fpxx();
 
     fpxx<17,5> my_fp, left, right;
+
+    left = 100000;
+    cout << "sqrt: " << sqrt((float)left) << "," << sqrt(left) << endl;
+    left = 0.5;
+    cout << "sqrt: " << sqrt(0.5) << "," << sqrt(left) << endl;
+    left = 1.0;
+    cout << "sqrt: " << sqrt(1.0) << "," << sqrt(left) << endl;
+    left = 1.9999;
+    cout << "sqrt: " << sqrt(1.9999) << "," << sqrt(left) << endl;
 
     cout << endl;
     cout << my_fp.m_size() << "," << my_fp.exp_size() << endl;
@@ -248,6 +234,7 @@ int main(int argc, char **argv)
     right = -0.11;
 
     cout << left + right << endl;
+
 
     float f = 0.00001;
     for(int i=0;i<12;++i){
