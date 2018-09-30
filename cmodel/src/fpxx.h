@@ -260,6 +260,13 @@ public:
 
         r.sign  = false;
         r.exp   = (op.exp - _zero_offset)/2 - lut_val.shift + _zero_offset;
+        if (r.exp < 0)
+            r.exp = 0;
+        if (r.exp > (1<<_exp_size)-2)
+            r.exp = (1<<_exp_size)-2;
+
+        r.exp   = r.exp & ((1<<_exp_size)-1);
+
         r.m     = lut_val.mant << (_m_size-FPXX_SQRT_LUT_MANT_BITS);
 
         return r;
@@ -310,12 +317,18 @@ public:
 
         r = 1.0/sqrt((float)op);
 
-        int shift_adj = lut_val.shift == -1 ?  0  : 
-                        lut_val.shift ==  0 ?  0  : 
+        int shift_adj = lut_val.shift == -1 ?  0  :
+                        lut_val.shift ==  0 ?  0  :
                         lut_val.shift ==  1 ?  -1 : -100;
 
         r.sign  = false;
         r.exp   = -(op.exp - _zero_offset)/2 + shift_adj + _zero_offset;
+        if (r.exp < 0)
+            r.exp = 0;
+        if (r.exp > (1<<_exp_size)-2)
+            r.exp = (1<<_exp_size)-2;
+
+        r.exp   = r.exp & ((1<<_exp_size)-1);
         r.m     = lut_val.mant << (_m_size-FPXX_SQRT_LUT_MANT_BITS);
 
 
