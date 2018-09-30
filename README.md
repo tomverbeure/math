@@ -25,6 +25,14 @@ Articles on reduced precision floating point
 
     Very interesting presentation on how to create division and square root on FPGA.
 
+    The thesis about this presentation can be found [here](http://www.ece.neu.edu/groups/rcl/theses/xjwang_phd2007.pdf).
+
+    [Another thesis](https://scholarworks.rit.edu/cgi/viewcontent.cgi?article=10862&context=theses) implementing this kind of divider, with (bad) source code.
+
+* [A Pipelined Divider with a Small Lookup Table](http://www.wseas.us/e-library/conferences/2007hangzhou/papers/560-407.pdf)
+
+    Paper that describes a similar divider as the one in the presentation above.
+
 * [Simplified Floating Point for DSP](https://people.ece.cornell.edu/land/courses/ece5760/FloatingPoint/index.html)
 
     Cornell student project with C code and Verilog.
