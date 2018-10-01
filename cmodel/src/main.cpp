@@ -212,8 +212,33 @@ int main(int argc, char **argv)
 
 //    stress_fpxx();
 
-    fpxx<17,5> my_fp, left, right;
+    fpxx<15,5> my_fp, left, right;
 
+    left  = 1.999; right = 1.999;
+    my_fp = left / right;
+    cout << left << "/" << right << "=" << my_fp << "(" << (float)left/(float)right << ")" <<  endl;
+
+    left  = 4; right = 2;
+    my_fp = left / right;
+    cout << left << "/" << right << "=" << my_fp << "(" << (float)left/(float)right << ")" <<  endl;
+
+    left  = 123456; right = 54321;
+    my_fp = left / right;
+    cout << left << "/" << right << "=" << my_fp << "(" << (float)left/(float)right << ")" <<  endl;
+
+    left  = 3.5; right = 1.5;
+    my_fp = left / right;
+    cout << left << "/" << right << "=" << my_fp << "(" << (float)left/(float)right << ")" <<  endl;
+
+    left  = 3; right = 1;
+    my_fp = left / right;
+    cout << left << "/" << right << "=" << my_fp << "(" << (float)left/(float)right << ")" <<  endl;
+
+    left  = 1; right = 2;
+    my_fp = left / right;
+    cout << left << "/" << right << "=" << my_fp << "(" << (float)left/(float)right << ")" <<  endl;
+
+#if 0
     cout << "--------------" << endl;
     left = 0.5;
     cout << left << " r_sqrt: " << 1.0/sqrt((float)left) << "," << recip_sqrt(left) << endl;
@@ -248,6 +273,7 @@ int main(int argc, char **argv)
     cout << left << " r_sqrt: " << 1.0/sqrt((float)left) << "," << recip_sqrt(left) << endl;
 
     cout << endl;
+#endif
 
 #if 0
     cout << my_fp.m_size() << "," << my_fp.exp_size() << endl;
