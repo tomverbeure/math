@@ -241,7 +241,9 @@ public:
 
                 int shift = fin_exp - exp;
 
-                div_lut[i].mant  = mant >> (23-(2*half_bits+1));      // +1 instead of +2 because the MSB is not included.
+                int round = (mant >> (23-(2*half_bits+2))) & 1;
+
+                div_lut[i].mant  = (mant >> (23-(2*half_bits+1))) + round;      // +1 instead of +2 because the MSB is not included.
                 div_lut[i].shift = shift;
 
                 max_shift = shift > max_shift ? shift : max_shift;
@@ -264,14 +266,18 @@ public:
         // Multiplying 2*half_bits * 2*half_bits = 4*half_bits.
         // According to paper, we need to keep 2*half_bits+2, so shift right by 2*half_bits-2
         unsigned long x_mul_yhyl = ((1<<_m_size) | left.m) * yh_m_yl;
+        unsigned x_mul_yhyl_round = (x_mul_yhyl_round >> (2*half_bits-1)) & 1;
         x_mul_yhyl >>= 2*half_bits-2;
+        x_mul_yhyl += x_mul_yhyl_round;
 
         // (2*half_bits+2) + (2*half_bits+2) = 4*half_bits +4
         // We need to keep 2*half_bits eventually, but there may be a leading zero. So first go to 2*half_bits+1.
         // So shift by 2*half_bits + 3
         unsigned long div = (x_mul_yhyl * recip_yh2);
         unsigned int div_shift = 2*half_bits+3;
+        unsigned div_round = (div >> (div_shift-1)) & 1;
         div >>= div_shift;
+        div += div_round;
 
         fpxx<_m_size, _exp_size, _zero_offset> r;
 
