@@ -214,7 +214,7 @@ int main(int argc, char **argv)
 
     stress_fpxx();
 
-    fpxx<5,8> my_fp, left, right;
+    fpxx<23,8> my_fp, left, right;
 
     left  = 1.999; right = 1.999;
     my_fp = left / right;

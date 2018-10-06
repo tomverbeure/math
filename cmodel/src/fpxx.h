@@ -228,9 +228,12 @@ public:
 
     friend fpxx<_m_size, _exp_size, _zero_offset>  operator/(const fpxx<_m_size, _exp_size, _zero_offset> left, const fpxx<_m_size, _exp_size, _zero_offset> right) {
 
+        bool round_ena = false;
+
         assert((_m_size&1) == 1);
 
-        unsigned int half_bits = (_m_size+1)/2;
+        int half_bits = (_m_size+1)/2;
+        int lut_mant_bits = 2*half_bits+1;
 
         static bool init = false;
         static div_lut_entry_t div_lut[1<<((_m_size+1)/2-1)]; // -1 because the MSB is always set.
@@ -252,12 +255,10 @@ public:
 
                 int shift = fin_exp - exp;
 
-                int lut_mant_bits = 2*half_bits+1;              // +1 instead of +2 because the MSB is not included.
+                int round = (mant >> (FP64_MANT_BITS-(lut_mant_bits+1))) & 1;
 
-                int round = lut_mant_bits >= FP64_MANT_BITS ? 0 : (mant >> (FP64_MANT_BITS-(2*half_bits+2))) & 1;
-
-                mant = (lut_mant_bits >= FP64_MANT_BITS) ? (mant << (lut_mant_bits-FP64_MANT_BITS)) : (mant >> (FP64_MANT_BITS-lut_mant_bits));
-                mant += round;
+                mant = mant >> (FP64_MANT_BITS-lut_mant_bits);
+                mant += round & round_ena;
 
                 div_lut[i].mant  = mant;
                 div_lut[i].shift = shift;
@@ -277,27 +278,27 @@ public:
         unsigned int yh_m_yl = yh - yl;
 
         unsigned int lut_addr = right.m >> half_bits;
-        unsigned int lut_mant_bits = 2*half_bits+1;
 
         div_lut_entry_t div_lut_val = div_lut[lut_addr];            // Don't include MSB in lookup, because it's always 1.
 
-        unsigned int recip_yh2 = (1<<(2*half_bits+1)) | div_lut_val.mant;
+        unsigned long recip_yh2 = (1<<lut_mant_bits) | div_lut_val.mant;
 
         // Multiplying 2*half_bits * 2*half_bits = 4*half_bits.
         // According to paper, we need to keep 2*half_bits+2, so shift right by 2*half_bits-2
         unsigned long x_mul_yhyl = ((1<<_m_size) | left.m) * (unsigned long)yh_m_yl;
-        unsigned x_mul_yhyl_round = (x_mul_yhyl_round >> (2*half_bits-1)) & 1;
-        x_mul_yhyl >>= 2*half_bits-2;
-        x_mul_yhyl += x_mul_yhyl_round;
+        unsigned int x_mul_yhyl_shift = 2*half_bits-2;
+        unsigned x_mul_yhyl_round = (x_mul_yhyl_round >> (x_mul_yhyl_shift+1)) & 1;
+        x_mul_yhyl >>= x_mul_yhyl_shift;
+        x_mul_yhyl += x_mul_yhyl_round & round_ena;
 
         // (2*half_bits+2) + (2*half_bits+2) = 4*half_bits +4
         // We need to keep 2*half_bits eventually, but there may be a leading zero. So first go to 2*half_bits+1.
         // So shift by 2*half_bits + 3
         unsigned long div = (x_mul_yhyl * recip_yh2);
-        unsigned int div_shift = 2*half_bits+3;
+        unsigned int div_shift = lut_mant_bits+2;
         unsigned div_round = (div >> (div_shift-1)) & 1;
         div >>= div_shift;
-        div += div_round;
+        div += div_round & round_ena;
 
         fpxx<_m_size, _exp_size, _zero_offset> r;
 
