@@ -268,7 +268,6 @@ public:
             init = true;
         }
 
-
         unsigned int yl_mask = (1<<(half_bits-1))-1;
         unsigned int yh_mask = ~yl_mask & ((1<<(2*half_bits))-1);
 
@@ -301,6 +300,14 @@ public:
         div += div_round & round_ena;
 
         fpxx<_m_size, _exp_size, _zero_offset> r;
+
+        if (left.is_zero()){
+            r.sign = 0;
+            r.exp = 0;
+            r.m = 0;
+
+            return r;
+        }
 
         r.sign = left.sign ^ right.sign;
 

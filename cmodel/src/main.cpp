@@ -154,9 +154,15 @@ bool stress_fpxx()
     fpxx<23,8> fpxx_r;
 
     for(long int i=0;i<10000000;++i){
+        if (i==4){
+            printf("*\n");
+        }
         float fp32_a = random_float();
         float fp32_b = random_float();
         float fp32_r;
+
+        fp32_a = int_as_float(float_as_int(fp32_a) & 0xff800400 | 0x00000000);
+        fp32_b = int_as_float(float_as_int(fp32_b) & 0xff800400 | 0x00000400);
 
         fpxx_a = fp32_a;
         fpxx_b = fp32_b;
@@ -174,7 +180,7 @@ bool stress_fpxx()
         fpxx_r = fpxx_a / fpxx_b;
 
         //if (fp32_r != fpxx_r && abs(fpxx_r.mant() - float_mant(fp32_r)) > 2){
-        if (fp32_r != fpxx_r && abs(float_mant((float)(fpxx_r)) - float_mant(fp32_r)) > 2){
+        if (fp32_r != fpxx_r && abs(float_mant((float)(fpxx_r)) - float_mant(fp32_r)) > 5){
             printf("Mismatch: %ld: fp32 %15e != fpxx %15e\n", i, fp32_r, (float)fpxx_r);
             printf("fp32_a: "); print_bits(fp32_a); printf(" %16e\n", fp32_a);
             printf("fpxx_a: "); print_bits(fp32_a); printf(" %16e, exp: %3d, mant: %8d\n", (float)fpxx_a, fpxx_a.exp, fpxx_a.mant());
@@ -215,6 +221,10 @@ int main(int argc, char **argv)
     stress_fpxx();
 
     fpxx<23,8> my_fp, left, right;
+
+    left  = 9.444733e+21; right = 1.511342e+23;
+    my_fp = left / right;
+    cout << left << "/" << right << "=" << my_fp << "(" << (float)left/(float)right << ")" <<  endl;
 
     left  = 1.999; right = 1.999;
     my_fp = left / right;
