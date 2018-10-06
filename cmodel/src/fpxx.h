@@ -316,12 +316,22 @@ public:
 
         unsigned int div_msb = 2*half_bits;
         if (div & (1<<div_msb)){
+            // div is 1x.xxxxxx. Shift right to 1.xxxxxx
             div >>= 1;
-            ++exp;
+            exp += 1;
         }
-        else if (!(div &(1<<(div_msb-1))) && div & (1<<(div_msb-2))){
+        else if (   !(div & (1<<(div_msb-1)))
+                 &&  (div & (1<<(div_msb-2))) ){
+            // div is 00.1xxxxx. Shift left to 1.xxxxxx
             div <<= 1;
-            --exp;
+            exp -= 1;
+        }
+        else if (   !(div & (1<<(div_msb-1)))
+                 && !(div & (1<<(div_msb-2)))
+                 &&  (div & (1<<(div_msb-3))) ){
+            // div is 00.01xxxx. Shift left to 1.xxxxxx
+            div <<= 2;
+            exp -= 2;
         }
 
         if (exp > ((1<<_exp_size)-1))
