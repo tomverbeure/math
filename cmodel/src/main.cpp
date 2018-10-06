@@ -37,7 +37,7 @@ void init_sqrt_lut()
 // Output: integer with 16 fractional bits
 unsigned int sqrt_int(unsigned int s)
 {
-    int lz = leading_zeros(s);
+    int lz = leading_zeros_int(s);
     int lz_adj = (lz & 1) ? lz : lz-1;
 
     // Significant bits
@@ -158,30 +158,32 @@ bool stress_fpxx()
         float fp32_b = random_float();
         float fp32_r;
 
-        if (!check_normal(fp32_a) || !check_normal(fp32_b)){
+        fpxx_a = fp32_a;
+        fpxx_b = fp32_b;
+
+        if (!check_normal(fp32_a) || !check_normal(fp32_b) || fpxx_b.is_zero() ){
             continue;
         }
 
-        fp32_r = fp32_a * fp32_b;
+        fp32_r = fp32_a / fp32_b;
 
         if (!check_normal(fp32_r)){
             continue;
         }
 
-        fpxx_a = fp32_a;
-        fpxx_b = fp32_b;
+        fpxx_r = fpxx_a / fpxx_b;
 
-        fpxx_r = fpxx_a * fpxx_b;
-
-        if (fp32_r != fpxx_r && abs(fpxx_r.mant() - float_mant(fp32_r)) > 2){
-            printf("Mismatch: %ld: fp32 %f != fpxx %f\n", i, fp32_r, (float)fpxx_r);
-            printf("fp32_a: %f\n", fp32_a);
-            printf("fp32_b: %f\n", fp32_b);
-            printf("fpxx_a: %f\n", (float)fpxx_a);
-            printf("fpxx_b: %f\n", (float)fpxx_b);
-            print_bits(fp32_r);
+        //if (fp32_r != fpxx_r && abs(fpxx_r.mant() - float_mant(fp32_r)) > 2){
+        if (fp32_r != fpxx_r && abs(float_mant((float)(fpxx_r)) - float_mant(fp32_r)) > 2){
+            printf("Mismatch: %ld: fp32 %15e != fpxx %15e\n", i, fp32_r, (float)fpxx_r);
+            printf("fp32_a: "); print_bits(fp32_a); printf(" %16e\n", fp32_a);
+            printf("fpxx_a: "); print_bits(fp32_a); printf(" %16e, exp: %3d, mant: %8d\n", (float)fpxx_a, fpxx_a.exp, fpxx_a.mant());
             printf("\n");
-            fpxx_r.print_bits();
+            printf("fp32_b: "); print_bits(fp32_b); printf(" %16e\n", fp32_b);
+            printf("fpxx_b: "); print_bits(fp32_b); printf(" %16e, exp: %3d, mant: %8d\n", (float)fpxx_b, fpxx_b.exp, fpxx_b.mant());
+            printf("\n");
+            printf("fp32_r: "); print_bits(fp32_r); printf(" %16e\n", fp32_r);
+            printf("fpxx_r: "); print_bits(fpxx_r); printf(" %16e, exp: %3d, mant: %8d\n", (float)fpxx_r, fpxx_r.exp, fpxx_r.mant());
             printf("\n");
             assert(0);
         }
@@ -210,9 +212,9 @@ int main(int argc, char **argv)
     test_sqrt(32769);
 #endif
 
-//    stress_fpxx();
+    stress_fpxx();
 
-    fpxx<15,5> my_fp, left, right;
+    fpxx<5,8> my_fp, left, right;
 
     left  = 1.999; right = 1.999;
     my_fp = left / right;

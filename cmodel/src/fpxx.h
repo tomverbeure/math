@@ -11,6 +11,11 @@
 #define FPXX_SQRT_LUT_SHIFT_BITS         4
 #define FPXX_SQRT_FRAC_BITS              8
 
+#define FP32_MANT_BITS                  23
+#define FP32_MANT_MASK                  ((1<<FP32_MANT_BITS)-1)
+#define FP32_EXP_BITS                   8
+#define FP32_EXP_MASK                   ((1<<FP32_EXP_BITS)-1)
+
 typedef struct {
     unsigned    mant;
     int         shift;
@@ -44,13 +49,13 @@ public:
         fi.f = f;
 
         bool     f_s    = fi.i >> 31;
-        unsigned f_e    = (fi.i >> 23) & 0xff;
-        unsigned f_m    = fi.i & 0x7fffff;
+        unsigned f_e    = (fi.i >> FP32_MANT_BITS) & FP32_EXP_MASK;
+        unsigned f_m    = fi.i & FP32_MANT_MASK;
 
         sign    = f_s;
         exp     = f_e == 0 ? 0 : (f_e - ((1<<7)-1) + _zero_offset) ;
         exp     = exp << (32-_exp_size) >> (32-_exp_size);
-        m       = f_m >> (23-_m_size);
+        m       = _m_size > FP32_MANT_BITS ? f_m << (_m_size-FP32_MANT_BITS) : f_m >> (FP32_MANT_BITS-_m_size);
     }
 
     fpxx(float f){
@@ -72,7 +77,7 @@ public:
             unsigned    i;
         } fi;
 
-        fi.i = (sign << 31) | (e<<23) | (m << (23-_m_size));
+        fi.i = (sign << 31) | (e<<FP32_MANT_BITS) | (_m_size > FP32_MANT_BITS ? m >> (_m_size-FP32_MANT_BITS) : m << (FP32_MANT_BITS-_m_size));
 
         return fi.f;
     }
@@ -231,19 +236,28 @@ public:
             int table_size = 1<<table_size_bits;
 
             for(int i=0;i<table_size;++i){
-                float fin   = 1.0 + (float)i/table_size;
-                int fin_exp = (float_as_int(fin) >> 23) & 0xff;
+                float fin   = 1.0 + (double)(i)/(double)table_size;
+                int fin_exp = (float_as_int(fin) >> FP32_MANT_BITS) & FP32_EXP_MASK;
 
                 float f     = 1.0/(fin*fin);
+                unsigned int f_int = float_as_int(f);
 
-                unsigned mant =  float_as_int(f) & 0x7fffff;
-                int exp       = (float_as_int(f) >> 23) & 0xff;
+                float quart = 0.25;
+                unsigned int quart_int = float_as_int(quart);
+
+                unsigned mant =  float_as_int(f) & FP32_MANT_MASK;
+                int exp       = (float_as_int(f) >> FP32_MANT_BITS) & FP32_EXP_MASK;
 
                 int shift = fin_exp - exp;
 
-                int round = (mant >> (23-(2*half_bits+2))) & 1;
+                int lut_mant_bits = 2*half_bits+1;              // +1 instead of +2 because the MSB is not included.
 
-                div_lut[i].mant  = (mant >> (23-(2*half_bits+1))) + round;      // +1 instead of +2 because the MSB is not included.
+                int round = lut_mant_bits >= FP32_MANT_BITS ? 0 : (mant >> (FP32_MANT_BITS-(2*half_bits+2))) & 1;
+
+                mant = (lut_mant_bits >= FP32_MANT_BITS) ? (mant << (lut_mant_bits-FP32_MANT_BITS)) : (mant >> (FP32_MANT_BITS-lut_mant_bits));
+                mant += round;
+
+                div_lut[i].mant  = mant;
                 div_lut[i].shift = shift;
 
                 max_shift = shift > max_shift ? shift : max_shift;
@@ -260,12 +274,16 @@ public:
 
         unsigned int yh_m_yl = yh - yl;
 
-        div_lut_entry_t div_lut_val = div_lut[right.m >> half_bits];            // Don't include MSB in lookup, because it's always 1.
+        unsigned int lut_addr = right.m >> half_bits;
+        unsigned int lut_mant_bits = 2*half_bits+1;
+
+        div_lut_entry_t div_lut_val = div_lut[lut_addr];            // Don't include MSB in lookup, because it's always 1.
+
         unsigned int recip_yh2 = (1<<(2*half_bits+1)) | div_lut_val.mant;
 
         // Multiplying 2*half_bits * 2*half_bits = 4*half_bits.
         // According to paper, we need to keep 2*half_bits+2, so shift right by 2*half_bits-2
-        unsigned long x_mul_yhyl = ((1<<_m_size) | left.m) * yh_m_yl;
+        unsigned long x_mul_yhyl = ((1<<_m_size) | left.m) * (unsigned long)yh_m_yl;
         unsigned x_mul_yhyl_round = (x_mul_yhyl_round >> (2*half_bits-1)) & 1;
         x_mul_yhyl >>= 2*half_bits-2;
         x_mul_yhyl += x_mul_yhyl_round;
@@ -282,7 +300,17 @@ public:
         fpxx<_m_size, _exp_size, _zero_offset> r;
 
         r.sign = left.sign ^ right.sign;
-        r.exp = left.exp - right.exp + 1 - div_lut_val.shift + _zero_offset;
+
+        int exp =  left.exp - right.exp + 1 - div_lut_val.shift + _zero_offset;
+
+        if (exp > ((1<<_exp_size)-1))
+            exp = (1<<_exp_size)-1;
+        else if (exp <= 0){
+            exp = 0;
+            div = 0;
+        }
+
+        r.exp = exp;
 
         unsigned int div_msb = 2*half_bits;
         if (div & (1<<div_msb)){
@@ -308,16 +336,16 @@ public:
             for(int i=0;i<FPXX_SQRT_LUT_SIZE;++i){
                 float fin     = (float)((1<<(FPXX_SQRT_LUT_SIZE_BITS-2)) + i)/(1<<(FPXX_SQRT_LUT_SIZE_BITS-1));
 
-                int fin_exp = (float_as_int(fin) >> 23) & 0xff;
+                int fin_exp = (float_as_int(fin) >> FP32_MANT_BITS) & FP32_EXP_MASK;
 
                 float f     = sqrt(fin);
 
-                unsigned mant =  float_as_int(f) & 0x7fffff;
-                int exp       = (float_as_int(f) >> 23) & 0xff;
+                unsigned mant =  float_as_int(f) & FP32_MANT_MASK;
+                int exp       = (float_as_int(f) >> FP32_MANT_BITS) & FP32_EXP_MASK;
 
                 int shift = fin_exp - exp;
 
-                sqrt_lut[i].mant  = mant >> (23-FPXX_SQRT_LUT_MANT_BITS);
+                sqrt_lut[i].mant  = mant >> (FP32_MANT_BITS-FPXX_SQRT_LUT_MANT_BITS);
                 sqrt_lut[i].shift = shift;
 
                 max_shift = shift > max_shift ? shift : max_shift;
@@ -358,16 +386,16 @@ public:
             for(int i=0;i<FPXX_SQRT_LUT_SIZE;++i){
                 float fin     = (float)((1<<(FPXX_SQRT_LUT_SIZE_BITS-2)) + i)/(1<<(FPXX_SQRT_LUT_SIZE_BITS-1));
 
-                int fin_exp = (float_as_int(fin) >> 23) & 0xff;
+                int fin_exp = (float_as_int(fin) >> FP32_MANT_BITS) & FP32_EXP_MASK;
 
                 float f     = 1.0/sqrt(fin);
 
-                unsigned mant =  float_as_int(f) & 0x7fffff;
-                int exp       = (float_as_int(f) >> 23) & 0xff;
+                unsigned mant =  float_as_int(f) & FP32_MANT_MASK;
+                int exp       = (float_as_int(f) >> FP32_MANT_BITS) & FP32_EXP_MASK;
 
                 int shift = fin_exp - exp;
 
-                sqrt_lut[i].mant  = mant >> (23-FPXX_SQRT_LUT_MANT_BITS);
+                sqrt_lut[i].mant  = mant >> (FP32_MANT_BITS-FPXX_SQRT_LUT_MANT_BITS);
                 sqrt_lut[i].shift = shift;
             }
             init = true;
