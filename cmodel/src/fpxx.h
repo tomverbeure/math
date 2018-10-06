@@ -16,6 +16,11 @@
 #define FP32_EXP_BITS                   8
 #define FP32_EXP_MASK                   ((1<<FP32_EXP_BITS)-1)
 
+#define FP64_MANT_BITS                  52L
+#define FP64_MANT_MASK                  ((1L<<FP64_MANT_BITS)-1)
+#define FP64_EXP_BITS                   11
+#define FP64_EXP_MASK                   ((1L<<FP64_EXP_BITS)-1)
+
 typedef struct {
     unsigned    mant;
     int         shift;
@@ -236,25 +241,22 @@ public:
             int table_size = 1<<table_size_bits;
 
             for(int i=0;i<table_size;++i){
-                float fin   = 1.0 + (double)(i)/(double)table_size;
-                int fin_exp = (float_as_int(fin) >> FP32_MANT_BITS) & FP32_EXP_MASK;
+                double fin   = 1.0 + (double)(i)/(double)table_size;
+                int fin_exp = (double_as_long(fin) >> FP64_MANT_BITS) & FP64_EXP_MASK;
 
-                float f     = 1.0/(fin*fin);
-                unsigned int f_int = float_as_int(f);
+                double f     = 1.0/(fin*fin);
+                unsigned long f_int = double_as_long(f);
 
-                float quart = 0.25;
-                unsigned int quart_int = float_as_int(quart);
-
-                unsigned mant =  float_as_int(f) & FP32_MANT_MASK;
-                int exp       = (float_as_int(f) >> FP32_MANT_BITS) & FP32_EXP_MASK;
+                unsigned long mant =  double_as_long(f) & FP64_MANT_MASK;
+                int exp       = (double_as_long(f) >> FP64_MANT_BITS) & FP64_EXP_MASK;
 
                 int shift = fin_exp - exp;
 
                 int lut_mant_bits = 2*half_bits+1;              // +1 instead of +2 because the MSB is not included.
 
-                int round = lut_mant_bits >= FP32_MANT_BITS ? 0 : (mant >> (FP32_MANT_BITS-(2*half_bits+2))) & 1;
+                int round = lut_mant_bits >= FP64_MANT_BITS ? 0 : (mant >> (FP64_MANT_BITS-(2*half_bits+2))) & 1;
 
-                mant = (lut_mant_bits >= FP32_MANT_BITS) ? (mant << (lut_mant_bits-FP32_MANT_BITS)) : (mant >> (FP32_MANT_BITS-lut_mant_bits));
+                mant = (lut_mant_bits >= FP64_MANT_BITS) ? (mant << (lut_mant_bits-FP64_MANT_BITS)) : (mant >> (FP64_MANT_BITS-lut_mant_bits));
                 mant += round;
 
                 div_lut[i].mant  = mant;
