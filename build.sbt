@@ -6,7 +6,7 @@ lazy val root = (project in file(".")).
       scalaVersion := "2.11.6",
       version      := "0.1.0-SNAPSHOT"
     )),
-    name := "superproject"
+    name := "Fpxx"
   ).dependsOn(vexRiscv)
 
 lazy val vexRiscv = RootProject(uri("git://github.com/SpinalHDL/VexRiscv.git"))

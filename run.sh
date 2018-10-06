@@ -1,3 +1,3 @@
 
-sbt "run-main demo.Briey"
+sbt "run-main math.TopVerilog"
 
