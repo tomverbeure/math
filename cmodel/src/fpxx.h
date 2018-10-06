@@ -306,6 +306,17 @@ public:
 
         int exp =  left.exp - right.exp + 1 - div_lut_val.shift + _zero_offset;
 
+
+        unsigned int div_msb = 2*half_bits;
+        if (div & (1<<div_msb)){
+            div >>= 1;
+            ++exp;
+        }
+        else if (!(div &(1<<(div_msb-1))) && div & (1<<(div_msb-2))){
+            div <<= 1;
+            --exp;
+        }
+
         if (exp > ((1<<_exp_size)-1))
             exp = (1<<_exp_size)-1;
         else if (exp <= 0){
@@ -313,18 +324,8 @@ public:
             div = 0;
         }
 
-        r.exp = exp;
-
-        unsigned int div_msb = 2*half_bits;
-        if (div & (1<<div_msb)){
-            div >>= 1;
-            ++r.exp;
-        }
-        else if (!(div &(1<<(div_msb-1))) && div & (1<<(div_msb-2))){
-            div <<= 1;
-            --r.exp;
-        }
         r.m = div & ((1<<_m_size)-1);
+        r.exp = exp;
 
         return r;
     }
