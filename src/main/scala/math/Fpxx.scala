@@ -74,10 +74,10 @@ class FpxxAdd(c: FpxxConfig) extends Component {
 
     val exp_add = UInt(c.exp_size bits)
 
-    val exp_diff_a_b = UInt(c.exp_size bits)
-    val exp_diff_b_a = UInt(c.exp_size bits)
+    val exp_diff_a_b = SInt(c.exp_size+1 bits)
+    val exp_diff_b_a = UInt(c.exp_size   bits)
 
-    exp_diff_a_b := op_a.exp - op_b.exp
+    exp_diff_a_b := op_a.exp.resize(c.exp_size+1).asSInt - op_b.exp.resize(c.exp_size+1).asSInt
     exp_diff_b_a := op_b.exp - op_a.exp
 
     val mant_a_adj = UInt(c.mant_size+2 bits)
@@ -86,11 +86,11 @@ class FpxxAdd(c: FpxxConfig) extends Component {
     when(exp_diff_a_b >=0){
         exp_add     := op_a.exp
         mant_a_adj  := mant_a.resize(c.mant_size+2);
-        mant_b_adj  := ((exp_diff_a_b > c.mant_size) ? U(0, c.mant_size+1 bits) | mant_b |>> exp_diff_a_b.resize(log2Up(c.mant_size))).resize(c.mant_size+2)
+        mant_b_adj  := ((exp_diff_a_b > c.mant_size) ? U(0, c.mant_size+1 bits) | mant_b |>> exp_diff_a_b.resize(log2Up(c.mant_size)).asUInt ).resize(c.mant_size+2)
     }
     .otherwise{
-        exp_add := op_b.exp
-        mant_a_adj  := ((exp_diff_b_a > c.mant_size) ? U(0, c.mant_size+1 bits) | mant_a |>> exp_diff_b_a.resize(log2Up(c.mant_size))).resize(c.mant_size+2)
+        exp_add     := op_b.exp
+        mant_a_adj  := ((exp_diff_b_a > c.mant_size) ? U(0, c.mant_size+1 bits) | mant_a |>> exp_diff_b_a.resize(log2Up(c.mant_size)) ).resize(c.mant_size+2)
         mant_b_adj  := mant_b.resize(c.mant_size+2);
     }
 
