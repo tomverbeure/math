@@ -51,13 +51,15 @@ class FpxxDemo extends Component {
 
     val core = new ClockingArea(coreClockDomain) {
 
-        val add = new FpxxAdd(config)
+        val add = new FpxxAdd(config, pipeStages = 2)
         add.io.op_a.fromVec(RegNext(io.op_a))
         add.io.op_b.fromVec(RegNext(io.op_b))
 
         io.op_a_p_op_b := RegNext(add.io.result).toVec()
 
-        io.lz := RegNext(LeadingZeros(io.lz_in))
+//        io.lz := RegNext(LeadingZeros(io.lz_in))
+        io.lz.setAll
+
     }
 }
 
