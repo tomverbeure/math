@@ -36,15 +36,18 @@ module tb;
     initial begin
         lz_in = 63'h00000000_00000000;
         @(posedge osc_clk);
+        @(posedge osc_clk);
         $display(lz);
         @(posedge osc_clk);
 
         lz_in = 63'h40000000_00000000;
         @(posedge osc_clk);
+        @(posedge osc_clk);
         $display(lz);
         @(posedge osc_clk);
 
         lz_in = 63'h00000000_80000000;
+        @(posedge osc_clk);
         @(posedge osc_clk);
         $display(lz);
         @(posedge osc_clk);
