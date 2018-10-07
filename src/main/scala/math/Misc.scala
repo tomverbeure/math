@@ -54,7 +54,7 @@ object LeadingZeros {
                     reduced((i+1)*(n+1)-1 downto i*(n+1)) := B"0" ## left
                 }.
                 otherwise{
-                    reduced((i+1)*(n+1)-1 downto i*(n+1)) := B"10" ## right(n-2 downto 0)
+                    reduced((i+1)*(n+1)-1 downto i*(n+1)) := B"01" ## right(n-2 downto 0)
                 }
                 i = i + 1
             }

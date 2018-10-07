@@ -1,0 +1,24 @@
+[*]
+[*] GTKWave Analyzer v3.3.90 (w)1999-2018 BSI
+[*] Sun Oct  7 04:06:52 2018
+[*]
+[dumpfile] "/home/tom/projects/math/waves.vcd"
+[dumpfile_mtime] "Sun Oct  7 04:05:37 2018"
+[dumpfile_size] 31333
+[savefile] "/home/tom/projects/math/waves.gtkw"
+[timestart] 0
+[size] 1774 1006
+[pos] 1062 -1179
+*-8.000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] tb.
+[sst_width] 225
+[signals_width] 118
+[sst_expanded] 1
+[sst_vpaned_height] 303
+@28
+tb.osc_clk
+@22
+tb.lz_in[62:0]
+tb.lz[5:0]
+[pattern_trace] 1
+[pattern_trace] 0

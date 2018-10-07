@@ -10,9 +10,12 @@ class FpxxDemo extends Component {
     val io = new Bundle {
         val osc_clk     = in(Bool)
 
-        val opA         = in(Fpxx(config))
-        val opB         = in(Fpxx(config))
-        val opA_p_opB   = out(Fpxx(config))
+        val op_a        = in(Bits(config.full_size() bits))
+        val op_b        = in(Bits(config.full_size() bits))
+        val op_a_p_op_b = out(Bits(config.full_size() bits))
+
+        val lz_in       = in(Bits(63 bits))
+        val lz          = out(UInt(6 bits))
     }
 
     noIoPrefix()
@@ -49,10 +52,12 @@ class FpxxDemo extends Component {
     val core = new ClockingArea(coreClockDomain) {
 
         val add = new FpxxAdd(config)
-        add.io.opA     <> io.opA
-        add.io.opB     <> io.opB
-        add.io.result  <> io.opA_p_opB
-    
+        add.io.op_a.fromVec(io.op_a)
+        add.io.op_b.fromVec(io.op_b)
+
+        io.op_a_p_op_b := add.io.result.toVec()
+
+        io.lz := LeadingZeros(io.lz_in)
     }
 }
 
