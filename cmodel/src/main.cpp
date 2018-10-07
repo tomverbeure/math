@@ -160,8 +160,8 @@ bool stress_fpxx()
 
         if (false){
             // Test special cases
-            fp32_a = int_as_float(float_as_int(fp32_a) & 0xff800400 | 0x00000000);
-            fp32_b = int_as_float(float_as_int(fp32_b) & 0xff800400 | 0x00000400);
+            fp32_a = int_as_float((float_as_int(fp32_a) & 0xff800400) | 0x00000000);
+            fp32_b = int_as_float((float_as_int(fp32_b) & 0xff800400) | 0x00000400);
         }
 
         fpxx_a = fp32_a;
