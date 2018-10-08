@@ -82,7 +82,25 @@ public:
             unsigned    i;
         } fi;
 
-        fi.i = (sign << 31) | (e<<FP32_MANT_BITS) | (_m_size > FP32_MANT_BITS ? m >> (_m_size-FP32_MANT_BITS) : m << (FP32_MANT_BITS-_m_size));
+        unsigned int mant_round;
+
+        mant_round = (_m_size > FP32_MANT_BITS ? (m >> (_m_size-FP32_MANT_BITS)) + ((m >> (_m_size-FP32_MANT_BITS-1))&1)
+                                               :  m << (FP32_MANT_BITS-_m_size));
+
+        fi.i = (sign << 31) | (e<<FP32_MANT_BITS) | mant_round;
+
+        return fi.f;
+    }
+
+    double to_double() const {
+        int e = exp == 0 ? 0 : (exp - _zero_offset + ((1<<7)-1) ) & 0xff;
+
+        union {
+            double      f;
+            uint64_t    i;
+        } fi;
+
+        fi.i = ((long)sign << 31) | ((long)e<<FP64_MANT_BITS) | (_m_size > FP64_MANT_BITS ? (long)m >> (_m_size-FP64_MANT_BITS) : (long)m << (FP64_MANT_BITS-_m_size));
 
         return fi.f;
     }

@@ -131,7 +131,7 @@ bool check_normal(float f)
     return normal;
 }
 
-void print_bits(float f)
+void print_bits_float(float f)
 {
     unsigned int fi = float_as_int(f);
 
@@ -146,6 +146,21 @@ void print_bits(float f)
     }
 }
 
+void print_bits_double(double f)
+{
+    uint64_t fi = double_as_long(f);
+
+    printf("%ld ", fi>>63);
+
+    for(int i=62;i>=52;--i){
+        printf("%ld", (fi>>i)&1);
+    }
+    printf(" ");
+    for(int i=51;i>=0;--i){
+        printf("%ld", (fi>>i)&1);
+    }
+}
+
 bool stress_fpxx()
 {
     // Check that fpxx<23,8> has the same results as fp32 for regular numbers (no denormals)
@@ -157,6 +172,13 @@ bool stress_fpxx()
         float fp32_a = random_float();
         float fp32_b = random_float();
         float fp32_r;
+        double fp64_a;
+        double fp64_b;
+        double fp64_r;
+
+        if (i==2){
+            continue;
+        }
 
         if (false){
             // Test special cases
@@ -167,11 +189,15 @@ bool stress_fpxx()
         fpxx_a = fp32_a;
         fpxx_b = fp32_b;
 
+        fp64_a = fp32_a;
+        fp64_b = fp32_b;
+
         if (!check_normal(fp32_a) || !check_normal(fp32_b) || fpxx_b.is_zero() ){
             continue;
         }
 
         fp32_r = fp32_a / fp32_b;
+        fp64_r = fp64_a / fp64_b;
 
         if (!check_normal(fp32_r)){
             continue;
@@ -180,16 +206,19 @@ bool stress_fpxx()
         fpxx_r = fpxx_a / fpxx_b;
 
         //if (fp32_r != fpxx_r && abs(fpxx_r.mant() - float_mant(fp32_r)) > 2){
-        if (fp32_r != fpxx_r && abs(float_mant((float)(fpxx_r)) - float_mant(fp32_r)) > 2){
+        if (fp32_r != fpxx_r && abs(float_mant((float)(fpxx_r)) - float_mant(fp32_r)) > 0){
             printf("Mismatch: %ld: fp32 %15e != fpxx %15e\n", i, fp32_r, (float)fpxx_r);
-            printf("fp32_a: "); print_bits(fp32_a); printf(" %16e\n", fp32_a);
-            printf("fpxx_a: "); print_bits(fp32_a); printf(" %16e, exp: %3d, mant: %8d\n", (float)fpxx_a, fpxx_a.exp, fpxx_a.mant());
+            printf("fp32_a: "); print_bits_float(fp32_a); printf(" %16e\n", fp32_a);
+            printf("fpxx_a: "); print_bits_float(fp32_a); printf(" %16e, exp: %3d, mant: %8d\n", (float)fpxx_a, fpxx_a.exp, fpxx_a.mant());
             printf("\n");
-            printf("fp32_b: "); print_bits(fp32_b); printf(" %16e\n", fp32_b);
-            printf("fpxx_b: "); print_bits(fp32_b); printf(" %16e, exp: %3d, mant: %8d\n", (float)fpxx_b, fpxx_b.exp, fpxx_b.mant());
+            printf("fp32_b: "); print_bits_float(fp32_b); printf(" %16e\n", fp32_b);
+            printf("fpxx_b: "); print_bits_float(fp32_b); printf(" %16e, exp: %3d, mant: %8d\n", (float)fpxx_b, fpxx_b.exp, fpxx_b.mant());
             printf("\n");
-            printf("fp32_r: "); print_bits(fp32_r); printf(" %16e\n", fp32_r);
-            printf("fpxx_r: "); print_bits(fpxx_r); printf(" %16e, exp: %3d, mant: %8d\n", (float)fpxx_r, fpxx_r.exp, fpxx_r.mant());
+            printf("fp32_r:    "); print_bits_float(fp32_r); printf(" %16e\n", fp32_r);
+            printf("fpxx_r:    "); print_bits_float(fpxx_r); printf(" %16e, exp: %3d, mant: %8d\n", (float)fpxx_r, fpxx_r.exp, fpxx_r.mant());
+            printf("\n");
+            printf("fp64_r: "); print_bits_double(fp64_r); printf(" %16e\n", fp64_r);
+            printf("fpxx_r: "); print_bits_double(fpxx_r.to_double()); printf(" %16e, exp: %3d, mant: %8d\n", (double)fpxx_r, fpxx_r.exp, fpxx_r.mant());
             printf("\n");
             assert(0);
         }
