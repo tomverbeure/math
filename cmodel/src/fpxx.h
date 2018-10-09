@@ -510,7 +510,7 @@ public:
         }
         printf(" ");
         for(int i=_m_size-1;i>=0;--i){
-            printf("%ld", (m>>i)&1);
+            printf("%lld", (m>>i)&1);
         }
     }
 

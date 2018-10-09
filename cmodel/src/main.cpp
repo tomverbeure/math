@@ -150,14 +150,14 @@ void print_bits_double(double f)
 {
     uint64_t fi = double_as_long(f);
 
-    printf("%ld ", fi>>63);
+    printf("%lld ", fi>>63);
 
     for(int i=62;i>=52;--i){
-        printf("%ld", (fi>>i)&1);
+        printf("%lld", (fi>>i)&1);
     }
     printf(" ");
     for(int i=51;i>=0;--i){
-        printf("%ld", (fi>>i)&1);
+        printf("%lld", (fi>>i)&1);
     }
 }
 
