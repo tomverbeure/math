@@ -34,7 +34,7 @@ object LeadingZeros {
         while(n <= zeros.getWidth){
             var pad_length =  (2*n - tree_in.getWidth % (2*n)) % (2*n)
             tree_in_padded = Bits((tree_in.getWidth + pad_length) bits)
-            tree_in_padded.setAll
+            tree_in_padded.clearAll
             when(True){
                 tree_in_padded(tree_in.range) := tree_in
             }
