@@ -3,6 +3,8 @@
 *.bak
 *.swp
 
+tmp/
+
 # sbt specific
 .cache/
 .history/
