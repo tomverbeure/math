@@ -22,10 +22,6 @@ case class Fpxx(c: FpxxConfig) extends Bundle {
     val exp     = UInt(c.exp_size bits)
     val mant    = UInt(c.mant_size bits)
 
-//    def full_size() : Int = {
-//        1 + c.exp_size + c.mant_size
-//    }
-
     def is_zero() : Bool = {
         exp === 0
     }
@@ -69,8 +65,20 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
     val op_a_p0 = io.op_a
     val op_b_p0 = io.op_b
 
+    val op_a_is_zero_p0 = op_a_p0.is_zero()
+    val op_b_is_zero_p0 = op_b_p0.is_zero()
+    val op_is_zero_p0   = op_a_is_zero_p0 || op_b_is_zero_p0
+
     val mant_a_p0 = op_a_p0.full_mant()
     val mant_b_p0 = op_b_p0.full_mant()
+
+    when(op_a_is_zero_p0){
+        mant_a_p0.clearAll
+    }
+
+    when(op_b_is_zero_p0){
+        mant_a_p0.clearAll
+    }
 
     val exp_add_p0 = UInt(c.exp_size bits)
 
@@ -83,7 +91,7 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
     val mant_a_adj_p0 = UInt(c.mant_size+2 bits)
     val mant_b_adj_p0 = UInt(c.mant_size+2 bits)
 
-    when(exp_diff_a_b_p0 >=0){
+    when(exp_diff_a_b_p0 >= 0){
         exp_add_p0     := op_a_p0.exp
         mant_a_adj_p0  := mant_a_p0.resize(c.mant_size+2);
         mant_b_adj_p0  := ((exp_diff_a_b_p0 > c.mant_size) ? U(0, c.mant_size+1 bits) | mant_b_p0 |>> exp_diff_a_b_p0.resize(log2Up(c.mant_size)).asUInt ).resize(c.mant_size+2)
@@ -96,25 +104,28 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 
     //============================================================
 
-    val op_a_sign_p1  = Bool
-    val op_b_sign_p1  = Bool
-    val exp_add_p1    = UInt(c.exp_size bits)
-    val mant_a_adj_p1 = UInt(mant_a_adj_p0.getWidth bits)
-    val mant_b_adj_p1 = UInt(mant_b_adj_p0.getWidth bits)
+    val op_is_zero_p1   = Bool
+    val op_a_sign_p1    = Bool
+    val op_b_sign_p1    = Bool
+    val exp_add_p1      = UInt(c.exp_size bits)
+    val mant_a_adj_p1   = UInt(mant_a_adj_p0.getWidth bits)
+    val mant_b_adj_p1   = UInt(mant_b_adj_p0.getWidth bits)
 
     if (pipeStages >= 1){
-        op_a_sign_p1  := RegNext(op_a_p0.sign)
-        op_b_sign_p1  := RegNext(op_b_p0.sign)
-        exp_add_p1    := RegNext(exp_add_p0)
-        mant_a_adj_p1 := RegNext(mant_a_adj_p0)
-        mant_b_adj_p1 := RegNext(mant_b_adj_p0)
+        op_is_zero_p1   := RegNext(op_is_zero_p0)
+        op_a_sign_p1    := RegNext(op_a_p0.sign)
+        op_b_sign_p1    := RegNext(op_b_p0.sign)
+        exp_add_p1      := RegNext(exp_add_p0)
+        mant_a_adj_p1   := RegNext(mant_a_adj_p0)
+        mant_b_adj_p1   := RegNext(mant_b_adj_p0)
     }
     else{
-        op_a_sign_p1  := op_a_p0.sign
-        op_b_sign_p1  := op_b_p0.sign
-        exp_add_p1    := exp_add_p0
-        mant_a_adj_p1 := mant_a_adj_p0
-        mant_b_adj_p1 := mant_b_adj_p0
+        op_is_zero_p1   := op_is_zero_p0
+        op_a_sign_p1    := op_a_p0.sign
+        op_b_sign_p1    := op_b_p0.sign
+        exp_add_p1      := exp_add_p0
+        mant_a_adj_p1   := mant_a_adj_p0
+        mant_b_adj_p1   := mant_b_adj_p0
     }
 
     //============================================================
@@ -137,19 +148,22 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 
     //============================================================
 
-    val sign_add_p2 = Bool
-    val exp_add_p2  = UInt(c.exp_size bits)
-    val mant_add_p2 = UInt(mant_add_p1.getWidth bits)
+    val op_is_zero_p2   = Bool
+    val sign_add_p2     = Bool
+    val exp_add_p2      = UInt(c.exp_size bits)
+    val mant_add_p2     = UInt(mant_add_p1.getWidth bits)
 
     if (pipeStages >= 2){
-        sign_add_p2 := RegNext(sign_add_p1)
-        exp_add_p2  := RegNext(exp_add_p1)
-        mant_add_p2 := RegNext(mant_add_p1)
+        op_is_zero_p2   := RegNext(op_is_zero_p1)
+        sign_add_p2     := RegNext(sign_add_p1)
+        exp_add_p2      := RegNext(exp_add_p1)
+        mant_add_p2     := RegNext(mant_add_p1)
     }
     else{
-        sign_add_p2 := sign_add_p1
-        exp_add_p2  := exp_add_p1
-        mant_add_p2 := mant_add_p1
+        op_is_zero_p2   := op_is_zero_p1
+        sign_add_p2     := sign_add_p1
+        exp_add_p2      := exp_add_p1
+        mant_add_p2     := mant_add_p1
     }
 
     //============================================================
@@ -158,6 +172,9 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
     val exp_final_p2   = UInt(c.exp_size bits)
 
     val lz_p2 = LeadingZeros(mant_add_p2.asBits)
+    when(op_is_zero_p2){
+        lz_p2.clearAll
+    }
 
     when(mant_add_p2(c.mant_size+1)){
         mant_final_p2  := mant_add_p2 |>> 1
@@ -168,18 +185,8 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
         exp_final_p2   := exp_add_p2 - lz_p2
     }
 
-    io.result := op_a_p0
-    when(op_a_p0.is_zero()){
-        io.result := op_b_p0
-    }
-    .elsewhen(op_b_p0.is_zero()){
-        io.result := op_a_p0
-    }
-    .otherwise{
-        io.result.sign  := sign_add_p2
-        io.result.exp   := exp_final_p2
-        io.result.mant  := mant_final_p2.resize(c.mant_size)
-    }
-
+    io.result.sign  := sign_add_p2
+    io.result.exp   := exp_final_p2
+    io.result.mant  := mant_final_p2.resize(c.mant_size)
 }
 
