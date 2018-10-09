@@ -13,12 +13,18 @@ object FpxxDemoTests {
             val oscClkPeriod = 10;  // 10 ns
 
             val clockDomain = ClockDomain(dut.io.osc_clk)
-            val cdFork = clockDomain.forkStimulus(period = oscClkPeriod)  
+            val cdFork = clockDomain.forkStimulus(period = oscClkPeriod)
             clockDomain.waitSampling()
 
             println("Start...")
 
-            val stimuli = Array[(Float, Float)]( (0,0), (0,1), (1,0), (1,1), (1000,1), (1, 1000), (1, -1), (-1, 1), (-100, 1), (100, -1), (1, -100), (-1, 100) )
+            val stimuli = Array[(Float, Float)](
+                                (0,0), (0,1), (1,0),
+                                (1,1), (1, -1), (-1, 1), (-1, -1),
+                                (100, 1), (-100, 1), (100, -1), (1, -100), (-1, 100), (-100, -1), (-1, -100),
+                                (100000000, 1), (1, 100000000),
+                                (100, 0.001f), (100, -0.001f)
+                            )
 
             var i=0
             while(i < stimuli.size){
