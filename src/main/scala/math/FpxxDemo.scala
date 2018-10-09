@@ -57,9 +57,7 @@ class FpxxDemo extends Component {
 
         io.op_a_p_op_b := RegNext(add.io.result).toVec()
 
-//        io.lz := RegNext(LeadingZeros(io.lz_in))
-        io.lz.setAll
-
+        io.lz := RegNext(LeadingZeros(io.lz_in))
     }
 }
 
