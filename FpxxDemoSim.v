@@ -35,68 +35,53 @@ module tb;
 
     initial begin
         lz_in = 63'h00000000_00000000;
-        @(posedge osc_clk);
-        @(posedge osc_clk);
+        repeat(6) @(posedge osc_clk);
         $display(lz);
         @(posedge osc_clk);
 
         lz_in = 63'h40000000_00000000;
-        @(posedge osc_clk);
-        @(posedge osc_clk);
+        repeat(6) @(posedge osc_clk);
         $display(lz);
         @(posedge osc_clk);
 
         lz_in = 63'h00000000_80000000;
-        @(posedge osc_clk);
-        @(posedge osc_clk);
+        repeat(6) @(posedge osc_clk);
         $display(lz);
         @(posedge osc_clk);
 
         op_a = 32'b0_00000000_00000000000000000000000;
         op_b = 32'b0_00000000_00000000000000000000000;
-        @(posedge osc_clk);
-        @(posedge osc_clk);
-        @(posedge osc_clk);
+        repeat(6) @(posedge osc_clk);
         $display("%b_%b_%b", op_a_p_op_b[31], op_a_p_op_b[30:23], op_a_p_op_b[22:0]);
         @(posedge osc_clk);
 
         op_a = 32'b0_00000000_00000000000000000000000;
         op_b = 32'b0_01111111_00000000000000000000000;
-        @(posedge osc_clk);
-        @(posedge osc_clk);
-        @(posedge osc_clk);
+        repeat(6) @(posedge osc_clk);
         $display("%b_%b_%b", op_a_p_op_b[31], op_a_p_op_b[30:23], op_a_p_op_b[22:0]);
         @(posedge osc_clk);
 
         op_a = 32'b0_01111111_00000000000000000000000;
         op_b = 32'b0_00000000_00000000000000000000000;
-        @(posedge osc_clk);
-        @(posedge osc_clk);
-        @(posedge osc_clk);
+        repeat(6) @(posedge osc_clk);
         $display("%b_%b_%b", op_a_p_op_b[31], op_a_p_op_b[30:23], op_a_p_op_b[22:0]);
         @(posedge osc_clk);
 
         op_a = 32'b0_01111111_00000000000000000000000;
         op_b = 32'b0_01111111_00000000000000000000000;
-        @(posedge osc_clk);
-        @(posedge osc_clk);
-        @(posedge osc_clk);
+        repeat(6) @(posedge osc_clk);
         $display("%b_%b_%b", op_a_p_op_b[31], op_a_p_op_b[30:23], op_a_p_op_b[22:0]);
         @(posedge osc_clk);
 
         op_a = 32'b0_10000000_10000000000000000000000;
         op_b = 32'b0_01111111_10000000000000000000000;
-        @(posedge osc_clk);
-        @(posedge osc_clk);
-        @(posedge osc_clk);
+        repeat(6) @(posedge osc_clk);
         $display("%b_%b_%b", op_a_p_op_b[31], op_a_p_op_b[30:23], op_a_p_op_b[22:0]);
         @(posedge osc_clk);
 
         op_a = 32'b0_01111111_10000000000000000000000;
         op_b = 32'b0_10000000_10000000000000000000000;
-        @(posedge osc_clk);
-        @(posedge osc_clk);
-        @(posedge osc_clk);
+        repeat(6) @(posedge osc_clk);
         $display("%b_%b_%b", op_a_p_op_b[31], op_a_p_op_b[30:23], op_a_p_op_b[22:0]);
         @(posedge osc_clk);
 
