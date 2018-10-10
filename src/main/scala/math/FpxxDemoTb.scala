@@ -35,13 +35,23 @@ object FpxxDemoTests {
         nrZeros
     }
 
+    def isDenormal(f : Float) : Boolean = {
+        val fi : Int = java.lang.Float.floatToIntBits(f)
+
+        (((fi>>23) & 0xff) == 0) && ((fi & 0x007fffff) != 0)
+    }
+
+    def isRegular(f : Float) : Boolean = {
+        !f.isInfinite() && !f.isNaN() && !isDenormal(f)
+    }
+
     def randomNormalFloat(rand: scala.util.Random) : Float = {
         var ai : Int = 0
         var af : Float = 0.0f
         do {
             ai = rand.nextInt
             af = java.lang.Float.intBitsToFloat(ai)
-        } while(af.isInfinite() || af.isNaN() || ((((ai>>23) & 0xff) == 0) && (ai & 0x007fffff) != 0))
+        } while(!isRegular(af))
 
         af
     }
@@ -51,22 +61,24 @@ object FpxxDemoTests {
         val actualMant   : Long = java.lang.Float.floatToIntBits(actual)   & 0x00000000007fffffL
         val expectedMant : Long = java.lang.Float.floatToIntBits(expected) & 0x00000000007fffffL
 
-        if ((actualMant-expectedMant).abs > 1 && !expected.isInfinite() && !expected.isNaN()){
+        if ((actualMant-expectedMant).abs > 15 && isRegular(expected)){
             printf("ERROR!\n")
-            printf("op A:     ");
+            printf("op A:     ")
             print_bits(opA)
-            printf("    %15e\n", opA);
+            printf("    %15e  %08x\n", opA, java.lang.Float.floatToIntBits(opA));
 
-            printf("op B:     ");
+            printf("op B:     ")
             print_bits(opB)
-            printf("    %15e\n", opB);
+            printf("    %15e  %08x\n", opB, java.lang.Float.floatToIntBits(opB));
+            printf("\n")
 
-            printf("Expected: ");
+            printf("Expected: ")
             print_bits(expected)
-            printf("    %15e\n", expected);
-            printf("Actual  : ");
+            printf("    %15e  %08x\n", expected, java.lang.Float.floatToIntBits(expected));
+
+            printf("Actual  : ")
             print_bits(actual)
-            printf("    %15e\n", actual);
+            printf("    %15e  %08x\n", actual, java.lang.Float.floatToIntBits(actual));
 
             false
         }
