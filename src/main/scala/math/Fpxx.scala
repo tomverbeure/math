@@ -160,18 +160,26 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
     val sign_add_p2 = Bool
     val mant_add_p2 = UInt(c.mant_size+2 bits)
 
+    val mant_a_opt_inv_p2 = UInt(c.mant_size+3 bits)
+    val mant_b_opt_inv_p2 = UInt(c.mant_size+3 bits)
+
     when(sign_a_p2 === sign_b_p2){
-        sign_add_p2 := sign_a_p2
-        mant_add_p2 := mant_a_adj_p2 + mant_b_adj_p2
+        sign_add_p2       := sign_a_p2
+        mant_a_opt_inv_p2 := mant_a_adj_p2 @@ False
+        mant_b_opt_inv_p2 := mant_b_adj_p2 @@ False
     }
     .elsewhen(mant_a_adj_p2 > mant_b_adj_p2){
-        sign_add_p2 := sign_a_p2
-        mant_add_p2 := mant_a_adj_p2 - mant_b_adj_p2
+        sign_add_p2       := sign_a_p2
+        mant_a_opt_inv_p2 :=  mant_a_adj_p2 @@ True
+        mant_b_opt_inv_p2 := ~mant_b_adj_p2 @@ True
     }
     .otherwise{
-        sign_add_p2 := sign_b_p2
-        mant_add_p2 := mant_b_adj_p2 - mant_a_adj_p2
+        sign_add_p2       := sign_b_p2
+        mant_a_opt_inv_p2 := ~mant_a_adj_p2 @@ True
+        mant_b_opt_inv_p2 :=  mant_b_adj_p2 @@ True
     }
+
+    mant_add_p2 := (mant_a_opt_inv_p2 + mant_b_opt_inv_p2)(1, c.mant_size+2 bits)
 
     //============================================================
 
