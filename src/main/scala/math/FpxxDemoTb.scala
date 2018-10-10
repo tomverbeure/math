@@ -9,6 +9,32 @@ import scala.collection.mutable.Queue
 
 object FpxxDemoTests {
 
+    def print_bits(f: Float) = {
+        var fl : Long = java.lang.Float.floatToIntBits(f) & 0x00000000ffffffffL
+
+        printf("%d ", (fl>>30)&1)
+        var i=30
+        while(i>=23){
+            printf("%d", (fl>>i)&1)
+            i-=1
+        }
+        printf(" ")
+        while(i>=0){
+            printf("%d", (fl>>i)&1)
+            i-=1
+        }
+    }
+
+    def countLeadingZeros(lz_in: Long) : Int = {
+        var i=22
+        var nrZeros = 0
+        while(i>=0 && (lz_in&(1<<i))==0){
+            nrZeros += 1
+            i -= 1
+        }
+        nrZeros
+    }
+
     def main(args: Array[String]): Unit = {
         SimConfig.withWave.compile(new FpxxDemo).doSim { dut =>
             val oscClkPeriod = 10;  // 10 ns
@@ -23,35 +49,6 @@ object FpxxDemoTests {
             println("Start...")
 
             println("\n\nTesting LeadingZeros...\n\n")
-
-            def countLeadingZeros(lz_in: Long) : Int =
-            {
-                var i=22
-                var nrZeros = 0
-                while(i>=0 && (lz_in&(1<<i))==0){
-                    nrZeros += 1
-                    i -= 1
-                }
-                nrZeros
-            }
-
-            def print_bits(f: Float)
-            {
-                var fl : Long = java.lang.Float.floatToIntBits(f) & 0x00000000ffffffffL
-
-                printf("%d ", (fl>>30)&1)
-                var i=30
-                while(i>=23){
-                    printf("%d", (fl>>i)&1)
-                    i-=1
-                }
-                printf(" ")
-                while(i>=0){
-                    printf("%d", (fl>>i)&1)
-                    i-=1
-                }
-
-            }
 
             var pass = 0
             var fail = 0
