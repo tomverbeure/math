@@ -96,6 +96,8 @@ public:
     }
 
     float to_float() const {
+        bool round_ena = false;
+
         int e = exp == 0 ? 0 : (exp - _zero_offset + ((1L<<(FP32_EXP_BITS-1))-1) ) & FP32_EXP_MASK;
 
         union {
@@ -104,7 +106,7 @@ public:
         } fi;
 
         uint32_t mant_round;
-        mant_round = (_m_size > FP32_MANT_BITS ? (m >> (_m_size-FP32_MANT_BITS)) + ((m >> (_m_size-FP32_MANT_BITS-1))&1)
+        mant_round = (_m_size > FP32_MANT_BITS ? (m >> (_m_size-FP32_MANT_BITS)) + ((m >> (_m_size-FP32_MANT_BITS-1)) & round_ena)
                                                :  m << (FP32_MANT_BITS-_m_size));
 
         fi.i = (sign << (FP32_EXP_BITS+FP32_MANT_BITS)) | (e<<FP32_MANT_BITS) | mant_round;
@@ -113,6 +115,8 @@ public:
     }
 
     double to_double() const {
+        bool round_ena = false;
+
         int e = exp == 0 ? 0 : (exp - _zero_offset + ((1L<<(FP64_EXP_BITS-1))-1) ) & FP64_EXP_MASK;
 
         union {
@@ -121,7 +125,7 @@ public:
         } fi;
 
         uint64_t mant_round;
-        mant_round = (_m_size > FP64_MANT_BITS ? (m >> (_m_size-FP64_MANT_BITS)) + ((m >> (_m_size-FP64_MANT_BITS-1))&1)
+        mant_round = (_m_size > FP64_MANT_BITS ? (m >> (_m_size-FP64_MANT_BITS)) + ((m >> (_m_size-FP64_MANT_BITS-1)) & round_ena)
                                                :  m << (FP64_MANT_BITS-_m_size));
 
 
