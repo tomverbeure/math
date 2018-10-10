@@ -102,18 +102,6 @@ void test_deviation()
     printf("%f: %f, %f (%f%%)\n", max_in , sqrt(max_in), sqrt_fp32(max_in), max_dev*100);
 }
 
-float int_as_float(unsigned i)
-{
-    union {
-        float       f;
-        unsigned    i;
-    } fi;
-
-    fi.i = i;
-
-    return fi.f;
-}
-
 int float_mant(float f)
 {
     return float_as_int(f) & 0x7fffff;
@@ -160,6 +148,16 @@ void print_bits_double(double f)
         printf("%lld", (fi>>i)&1);
     }
 }
+
+template <int _m_size, int _exp_size, int _zero_offset = ((1L<<(_exp_size-1))-1)>
+void print_fp32_fpxx(float fp32, fpxx<_m_size, _exp_size, _zero_offset> fx)
+{
+    cout << "fp32: "; print_bits_float(fp32);
+    printf("\n");
+    cout << "fpxx: "; fx.print_bits();
+    printf("\n");
+}
+
 
 bool stress_fpxx()
 {
@@ -249,10 +247,12 @@ int main(int argc, char **argv)
     test_sqrt(32769);
 #endif
 
-    stress_fpxx();
+
+//    stress_fpxx();
 
     fpxx<23,8> my_fp, left, right;
 
+#if 0
     left  = 1.999; right = 1.999;
     my_fp = left / right;
     cout << left << "/" << right << "=" << my_fp << "(" << (float)left/(float)right << ")" <<  endl;
@@ -276,6 +276,22 @@ int main(int argc, char **argv)
     left  = 1; right = 2;
     my_fp = left / right;
     cout << left << "/" << right << "=" << my_fp << "(" << (float)left/(float)right << ")" <<  endl;
+#endif
+
+//    left = 3.494705e-06;
+//    right = -4.046430e-06;
+    left  = int_as_float(0x64f9bf6f);
+    right = int_as_float(0xe504bbd2);
+    my_fp = left + right;
+    float fp32 = (float)left + (float)right;
+    cout << left << " + " << right << " = " << my_fp << " (" << fp32 << ")" <<  endl;
+
+    printf("Left:\n");
+    print_fp32_fpxx((float)left, left);
+    printf("Right:\n");
+    print_fp32_fpxx((float)right, right);
+    printf("Result:\n");
+    print_fp32_fpxx(fp32, my_fp);
 
 #if 0
     cout << "--------------" << endl;

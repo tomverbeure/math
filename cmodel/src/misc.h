@@ -13,6 +13,19 @@ inline uint32_t float_as_int(float f)
     return fi.i;
 }
 
+inline float int_as_float(uint32_t i)
+{
+    union {
+        float       f;
+        uint32_t    i;
+    } fi;
+
+    fi.i = i;
+
+    return fi.f;
+}
+
+
 inline uint64_t double_as_long(double f)
 {
     union {
