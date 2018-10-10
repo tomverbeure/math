@@ -113,7 +113,7 @@ object FpxxDemoTests {
 
                 expResults += ((r_exp, op_a, op_b))
 
-                clockDomain.waitSampling(5)
+                clockDomain.waitSampling(6)
 
                 var r_act = java.lang.Float.intBitsToFloat(dut.io.op_a_p_op_b.toLong.toInt)
                 printf("Expected: %10e, Actual: %10e\n", r_exp, r_act);
