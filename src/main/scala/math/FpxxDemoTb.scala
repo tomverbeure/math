@@ -35,6 +35,47 @@ object FpxxDemoTests {
         nrZeros
     }
 
+    def randomNormalFloat(rand: scala.util.Random) : Float = {
+        var ai : Int = 0
+        var af : Float = 0.0f
+        do {
+            ai = rand.nextInt
+            af = java.lang.Float.intBitsToFloat(ai)
+        } while(af.isInfinite() || af.isNaN() || ((((ai>>23) & 0xff) == 0) && (ai & 0x007fffff) != 0))
+
+        af
+    }
+
+    def resultMatches(opA: Float, opB: Float, expected: Float, actual: Float, verbose: Boolean = false) : Boolean = {
+
+        val actualMant   : Long = java.lang.Float.floatToIntBits(actual)   & 0x00000000007fffffL
+        val expectedMant : Long = java.lang.Float.floatToIntBits(expected) & 0x00000000007fffffL
+
+        if ((actualMant-expectedMant).abs > 1 && !expected.isInfinite() && !expected.isNaN()){
+            printf("ERROR!\n")
+            printf("op A:     ");
+            print_bits(opA)
+            printf("    %15e\n", opA);
+
+            printf("op B:     ");
+            print_bits(opB)
+            printf("    %15e\n", opB);
+
+            printf("Expected: ");
+            print_bits(expected)
+            printf("    %15e\n", expected);
+            printf("Actual  : ");
+            print_bits(actual)
+            printf("    %15e\n", actual);
+
+            false
+        }
+        else{
+            if (verbose) printf("Match!\n")
+            true
+        }
+    }
+
     def main(args: Array[String]): Unit = {
         SimConfig.withWave.compile(new FpxxDemo).doSim { dut =>
             val oscClkPeriod = 10;  // 10 ns
@@ -53,7 +94,7 @@ object FpxxDemoTests {
             var pass = 0
             var fail = 0
 
-            var rand = scala.util.Random
+            var rand = new scala.util.Random(0)
             var i=0
             while(i<1000){
                 var lz_in : Long = (rand.nextLong & 0x00000000007fffff) >> (rand.nextInt & 0x1f)
@@ -92,45 +133,52 @@ object FpxxDemoTests {
             fail = 0
 
             i=0
-            while(i < stimuli.size){
-                val inputs = stimuli(i)
+            while(i < stimuli.size || i < 100000){
+                var inputs : (Float, Float) = (0.0f, 0.0f)
+                if (i < stimuli.size){
+                    inputs = stimuli(i)
+                }
+                else{
+                    inputs = ( randomNormalFloat(rand), randomNormalFloat(rand) )
+                }
 
                 var op_a  = inputs._1
                 var op_b  = inputs._2
                 var r_exp = op_a + op_b
 
+                expResults += ((r_exp, op_a, op_b))
+
                 // Convert signed int to positive long
                 var op_a_long : Long = java.lang.Float.floatToIntBits(op_a) & 0x00000000ffffffffL
                 var op_b_long : Long = java.lang.Float.floatToIntBits(op_b) & 0x00000000ffffffffL
 
-                printf("%6d: %10e, %10e\n", i, op_a, op_b)
+                // Apply operands
                 dut.io.op_vld #= true
                 dut.io.op_a   #= op_a_long
                 dut.io.op_b   #= op_b_long
+                clockDomain.waitSampling(1)
+                dut.io.op_vld #= false
 
-                expResults += ((r_exp, op_a, op_b))
-
-                clockDomain.waitSampling(6)
+                // Wait until result appears
+                while(!dut.io.op_a_p_op_b_vld.toBoolean){
+                    clockDomain.waitSampling()
+                }
 
                 var r_act = java.lang.Float.intBitsToFloat(dut.io.op_a_p_op_b.toLong.toInt)
-                printf("Expected: %10e, Actual: %10e\n", r_exp, r_act);
 
-                if (r_act != r_exp){
-                    fail += 1
-                    printf("ERROR!\n")
-                    printf("Expected: ");
-                    print_bits(r_exp)
-                    printf("\n");
-                    printf("Actual  : ");
-                    print_bits(r_act)
-                    printf("\n");
-                }
-                else{
+                if (resultMatches(op_a, op_b, r_exp, r_act)){
                     pass += 1
-                    printf("MATCH!\n")
+                }
+                else {
+                    fail += 1
+                    printf("%6d: %10e, %10e\n", i, op_a, op_b)
+                    printf("Expected: %10e, Actual: %10e\n", r_exp, r_act);
+                    printf("--------\n")
+                    simFailure("ABORTING!")
                 }
 
-                printf("--------\n")
+                if (i%1000 == 0) printf(".")
+
                 i+=1
             }
             dut.io.op_vld #= false

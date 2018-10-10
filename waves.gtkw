@@ -1,72 +1,36 @@
 [*]
-[*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Tue Oct  9 07:00:55 2018
+[*] GTKWave Analyzer v3.3.90 (w)1999-2018 BSI
+[*] Wed Oct 10 02:52:12 2018
 [*]
-[dumpfile] "/home/ubuntu/projects/math/simWorkspace/FpxxDemo/test.vcd"
-[dumpfile_mtime] "Tue Oct  9 06:59:54 2018"
-[dumpfile_size] 11052
-[savefile] "/home/ubuntu/projects/math/waves.gtkw"
-[timestart] 0
-[size] 1609 899
-[pos] -1 -1
-*-5.315292 60 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[treeopen] TOP.
-[treeopen] TOP.FpxxDemo.
-[sst_width] 409
-[signals_width] 335
+[dumpfile] "/home/tom/projects/math/simWorkspace/FpxxDemo/test.vcd"
+[dumpfile_mtime] "Wed Oct 10 02:49:50 2018"
+[dumpfile_size] 106165
+[savefile] "/home/tom/projects/math/waves.gtkw"
+[timestart] 29095
+[size] 1610 1048
+[pos] -2038 236
+*-8.275119 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 225
+[signals_width] 166
 [sst_expanded] 1
-[sst_vpaned_height] 259
+[sst_vpaned_height] 318
 @28
 TOP.osc_clk
 @22
-TOP.lz_in[62:0]
-TOP.lz[5:0]
+TOP.lz_in[22:0]
+TOP.lz[4:0]
 @200
 -
+@28
+TOP.op_vld
 @22
 TOP.op_a[31:0]
 TOP.op_b[31:0]
-@200
+@201
 -
+@28
+TOP.op_a_p_op_b_vld
 @22
 TOP.op_a_p_op_b[31:0]
-@200
--
-@28
-TOP.FpxxDemo.core_add.op_a_p0_sign
-@22
-TOP.FpxxDemo.core_add.op_a_p0_exp[7:0]
-TOP.FpxxDemo.core_add.op_a_p0_mant[22:0]
-@200
--
-@28
-TOP.FpxxDemo.core_add.op_b_p0_sign
-@22
-TOP.FpxxDemo.core_add.op_b_p0_exp[7:0]
-TOP.FpxxDemo.core_add.op_b_p0_mant[22:0]
-@200
--
-@22
-TOP.FpxxDemo.core_add.mant_a_p0[23:0]
-TOP.FpxxDemo.core_add.mant_b_p0[23:0]
-@200
--
-@22
-TOP.FpxxDemo.core_add.mant_a_adj_p0[24:0]
-TOP.FpxxDemo.core_add.mant_b_adj_p0[24:0]
-@200
--
-@22
-TOP.FpxxDemo.core_add.exp_diff_a_b_p0[8:0]
-TOP.FpxxDemo.core_add.exp_add_p1[7:0]
-TOP.FpxxDemo.core_add.mant_add_p1[24:0]
-@200
--
-@22
-TOP.FpxxDemo.core_add.lz_p2[4:0]
-TOP.FpxxDemo.core_add.mant_add_p2[24:0]
-TOP.FpxxDemo.core_add.exp_add_p2[7:0]
-@200
--
 [pattern_trace] 1
 [pattern_trace] 0
