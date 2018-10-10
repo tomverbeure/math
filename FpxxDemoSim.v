@@ -5,8 +5,8 @@ module tb;
     reg  [31:0]     op_a;
     reg  [31:0]     op_b;
     wire [31:0]     op_a_p_op_b;
-    reg  [62:0]     lz_in;
-    wire [5:0]      lz;
+    reg  [22:0]     lz_in;
+    wire [4:0]      lz;
 
     FpxxDemo u_dut (
       .osc_clk(osc_clk),
@@ -34,17 +34,17 @@ module tb;
     end
 
     initial begin
-        lz_in = 63'h00000000_00000000;
+        lz_in = 23'h000000;
         repeat(6) @(posedge osc_clk);
         $display(lz);
         @(posedge osc_clk);
 
-        lz_in = 63'h40000000_00000000;
+        lz_in = 23'h400000;
         repeat(6) @(posedge osc_clk);
         $display(lz);
         @(posedge osc_clk);
 
-        lz_in = 63'h00000000_80000000;
+        lz_in = 23'h000100;
         repeat(6) @(posedge osc_clk);
         $display(lz);
         @(posedge osc_clk);
