@@ -158,7 +158,6 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
     //============================================================
 
     val sign_add_p2 = Bool
-    val mant_add_p2 = UInt(c.mant_size+2 bits)
 
     val mant_a_opt_inv_p2 = UInt(c.mant_size+3 bits)
     val mant_b_opt_inv_p2 = UInt(c.mant_size+3 bits)
@@ -179,17 +178,30 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
         mant_b_opt_inv_p2 :=  mant_b_adj_p2 @@ True
     }
 
-    mant_add_p2 := (mant_a_opt_inv_p2 + mant_b_opt_inv_p2)(1, c.mant_size+2 bits)
+    //============================================================
+
+    val p3_pipe_ena = pipeStages >= 4
+
+    val p3_vld            = optPipe(p2_vld, p3_pipe_ena)
+    val op_is_zero_p3     = optPipe(op_is_zero_p2,     p2_vld, p3_pipe_ena)
+    val sign_add_p3       = optPipe(sign_add_p2,       p2_vld, p3_pipe_ena)
+    val exp_add_p3        = optPipe(exp_add_p2,        p2_vld, p3_pipe_ena)
+    val mant_a_opt_inv_p3 = optPipe(mant_a_opt_inv_p2, p2_vld, p3_pipe_ena)
+    val mant_b_opt_inv_p3 = optPipe(mant_b_opt_inv_p2, p2_vld, p3_pipe_ena)
+
+    //============================================================
+
+    val mant_add_p3 = (mant_a_opt_inv_p3 + mant_b_opt_inv_p3)(1, c.mant_size+2 bits)
 
     //============================================================
 
     val p4_pipe_ena = pipeStages >= 2
 
-    val p4_vld        = optPipe(p2_vld, p4_pipe_ena)
-    val op_is_zero_p4 = optPipe(op_is_zero_p2, p2_vld, p4_pipe_ena)
-    val sign_add_p4   = optPipe(sign_add_p2,   p2_vld, p4_pipe_ena)
-    val exp_add_p4    = optPipe(exp_add_p2,    p2_vld, p4_pipe_ena)
-    val mant_add_p4   = optPipe(mant_add_p2,   p2_vld, p4_pipe_ena)
+    val p4_vld        = optPipe(p3_vld, p4_pipe_ena)
+    val op_is_zero_p4 = optPipe(op_is_zero_p3, p3_vld, p4_pipe_ena)
+    val sign_add_p4   = optPipe(sign_add_p3,   p3_vld, p4_pipe_ena)
+    val exp_add_p4    = optPipe(exp_add_p3,    p3_vld, p4_pipe_ena)
+    val mant_add_p4   = optPipe(mant_add_p3,   p3_vld, p4_pipe_ena)
 
     //============================================================
 
