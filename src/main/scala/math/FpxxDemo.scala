@@ -17,6 +17,9 @@ class FpxxDemo extends Component {
         val op_a_p_op_b_vld     = out(Bool)
         val op_a_p_op_b         = out(Bits(config.full_size bits))
 
+        val op_a_mul_op_b_vld   = out(Bool)
+        val op_a_mul_op_b       = out(Bits(config.full_size bits))
+
         val lz_in       = in(Bits(23 bits))
         val lz          = out(UInt(5 bits))
     }
@@ -61,6 +64,14 @@ class FpxxDemo extends Component {
 
         io.op_a_p_op_b_vld := RegNext(add.io.result_vld)
         io.op_a_p_op_b     := RegNext(add.io.result).toVec()
+
+        val mul = new FpxxMul(config, pipeStages = 5)
+        mul.io.op_vld :=    RegNext(io.op_vld)
+        mul.io.op_a.fromVec(RegNext(io.op_a))
+        mul.io.op_b.fromVec(RegNext(io.op_b))
+
+        io.op_a_mul_op_b_vld := RegNext(mul.io.result_vld)
+        io.op_a_mul_op_b     := RegNext(mul.io.result).toVec()
 
         io.lz := RegNext(LeadingZeros(io.lz_in))
     }
