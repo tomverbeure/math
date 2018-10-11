@@ -225,7 +225,7 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 
     //============================================================
 
-    val p5_pipe_ena = pipeStages >= 4
+    val p5_pipe_ena = pipeStages >= 5
 
     val p5_vld        = optPipe(p4_vld, p4_pipe_ena)
     val lz_p5         = optPipe(lz_p4,           p4_vld, p5_pipe_ena)
