@@ -54,7 +54,7 @@ class FpxxMul(c: FpxxConfig, pipeStages: Int = 1) extends Component {
     val mant_b_full_p1 = U(1, 1 bits) @@ mant_b_p1
 
     val mant_mul_p1 = UInt(c.mant_size+1 bits)
-    mant_mul_p1 := (mant_a_p1 * mant_b_p1) >> (c.mant_size+1)
+    mant_mul_p1 := (mant_a_full_p1 * mant_b_full_p1) >> (c.mant_size+1)
 
     //============================================================
     val p2_pipe_ena = pipeStages >= 1
