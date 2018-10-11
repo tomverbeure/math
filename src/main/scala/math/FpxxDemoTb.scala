@@ -5,8 +5,6 @@ import spinal.sim._
 import spinal.core._
 import spinal.core.sim._
 
-import scala.collection.mutable.Queue
-
 object FpxxDemoTests {
 
     def print_bits(f: Float) = {
@@ -139,8 +137,6 @@ object FpxxDemoTests {
                                 (100, -99.9999f)
                             )
 
-            var expResults = Queue[(Float, Float, Float)]()
-
             pass = 0
             fail = 0
 
@@ -156,9 +152,7 @@ object FpxxDemoTests {
 
                 var op_a  = inputs._1
                 var op_b  = inputs._2
-                var r_exp = op_a + op_b
-
-                expResults += ((r_exp, op_a, op_b))
+                var sum_exp = op_a + op_b
 
                 // Convert signed int to positive long
                 var op_a_long : Long = java.lang.Float.floatToIntBits(op_a) & 0x00000000ffffffffL
@@ -176,15 +170,15 @@ object FpxxDemoTests {
                     clockDomain.waitSampling()
                 }
 
-                var r_act = java.lang.Float.intBitsToFloat(dut.io.op_a_p_op_b.toLong.toInt)
+                var sum_act = java.lang.Float.intBitsToFloat(dut.io.op_a_p_op_b.toLong.toInt)
 
-                if (resultMatches(op_a, op_b, r_exp, r_act)){
+                if (resultMatches(op_a, op_b, sum_exp, sum_act)){
                     pass += 1
                 }
                 else {
                     fail += 1
                     printf("%6d: %10e, %10e\n", i, op_a, op_b)
-                    printf("Expected: %10e, Actual: %10e\n", r_exp, r_act);
+                    printf("Expected: %10e, Actual: %10e\n", sum_exp, sum_act);
                     printf("--------\n")
                     simFailure("ABORTING!")
                 }
@@ -194,10 +188,6 @@ object FpxxDemoTests {
                 i+=1
             }
             dut.io.op_vld #= false
-
-//            while(!expResults.isEmpty){
-//                printf("Queue: %f\n", expResults.dequeue._1)
-//            }
 
             clockDomain.waitSampling(10)
             println("Done!")
