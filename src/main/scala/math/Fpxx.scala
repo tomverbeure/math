@@ -193,26 +193,45 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 
     //============================================================
 
-    val mant_final_p4  = UInt(c.mant_size+2 bits)
-    val exp_final_p4   = UInt(c.exp_size bits)
-
     val lz_p4 = LeadingZeros(mant_add_p4.resize(c.mant_size+1).asBits)
     when(op_is_zero_p4){
         lz_p4.clearAll
     }
 
+    val exp_add_adj_p4  = UInt(c.exp_size bits)
+    val mant_add_adj_p4 = UInt(c.mant_size+1 bits)
+
     when(mant_add_p4(c.mant_size+1)){
-        mant_final_p4  := mant_add_p4 |>> 1
-        exp_final_p4   := exp_add_p4 + 1
+        mant_add_adj_p4  := mant_add_p4 >> 1
+        exp_add_adj_p4   := exp_add_p4 + 1
+        lz_p4.clearAll
     }
     .otherwise{
-        mant_final_p4  := mant_add_p4 |<< lz_p4
-        exp_final_p4   := (lz_p4 < c.mant_size+1) ? (exp_add_p4 - lz_p4) | 0
+        mant_add_adj_p4  := mant_add_p4.resize(c.mant_size+1)
+        exp_add_adj_p4   := exp_add_p4
     }
 
-    io.result_vld   := p4_vld
-    io.result.sign  := sign_add_p4
-    io.result.exp   := exp_final_p4
-    io.result.mant  := mant_final_p4.resize(c.mant_size)
+    //============================================================
+
+    val p5_pipe_ena = pipeStages >= 4
+
+    val p5_vld        = optPipe(p4_vld, p4_pipe_ena)
+    val lz_p5         = optPipe(lz_p4,           p4_vld, p5_pipe_ena)
+    val sign_add_p5   = optPipe(sign_add_p4,     p4_vld, p5_pipe_ena)
+    val exp_add_p5    = optPipe(exp_add_adj_p4,  p4_vld, p5_pipe_ena)
+    val mant_add_p5   = optPipe(mant_add_adj_p4, p4_vld, p5_pipe_ena)
+
+    //============================================================
+
+    val mant_final_p5  = UInt(c.mant_size+1 bits)
+    val exp_final_p5   = UInt(c.exp_size bits)
+
+    mant_final_p5  := mant_add_p5 |<< lz_p5
+    exp_final_p5   := (lz_p5 < c.mant_size+1) ? (exp_add_p5 - lz_p5) | 0
+
+    io.result_vld   := p5_vld
+    io.result.sign  := sign_add_p5
+    io.result.exp   := exp_final_p5
+    io.result.mant  := mant_final_p5.resize(c.mant_size)
 }
 
