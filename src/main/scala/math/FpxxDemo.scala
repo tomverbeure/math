@@ -11,11 +11,11 @@ class FpxxDemo extends Component {
         val osc_clk     = in(Bool)
 
         val op_vld      = in(Bool)
-        val op_a        = in(Bits(config.full_size() bits))
-        val op_b        = in(Bits(config.full_size() bits))
+        val op_a        = in(Bits(config.full_size bits))
+        val op_b        = in(Bits(config.full_size bits))
 
         val op_a_p_op_b_vld     = out(Bool)
-        val op_a_p_op_b         = out(Bits(config.full_size() bits))
+        val op_a_p_op_b         = out(Bits(config.full_size bits))
 
         val lz_in       = in(Bits(23 bits))
         val lz          = out(UInt(5 bits))

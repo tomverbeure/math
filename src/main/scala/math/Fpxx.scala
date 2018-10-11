@@ -8,9 +8,9 @@ case class FpxxConfig(
                 mant_size   : Int
                 ) {
 
-    def full_size() = {
-        1 + exp_size + mant_size
-    }
+    def full_size = 1 + exp_size + mant_size
+
+    def bias = (1<<(exp_size-1))-1
 }
 
 object Fpxx {
