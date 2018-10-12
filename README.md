@@ -55,3 +55,13 @@ Articles on two-complement floating point
 
     Links to conversion code.
 
+Leading Zero Circuits
+
+* [Leading-Zero Anticipatory Logic for High-Speed Floating Point Addition](http://soc.knu.ac.kr/video_lectures/11_7.pdf) (1995)
+
+* [Leading Zero Anticipation and Detection - A Comparison of Methods](https://www.csee.umbc.edu/~phatak/645/supl/lza/lza-survey-arith01.pdf) (2001)
+
+* [Analysis and Implementation of a Novel Leading Zero Anticipation Algorithm for Floating Point Arithmetic Units](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.667.533&rep=rep1&type=pdf) (2001)
+
+* [Hybrid LZA: A Near Optimal Implementation of the Leading Zero Anticipator](https://lap.epfl.ch/files/content/sites/lap/files/shared/publications/VermaJan09_HybridLzaANearOptimalImplementationOfTheLeadingZeroAnticipator_ASPDAC09.pdf) (2009)
+
