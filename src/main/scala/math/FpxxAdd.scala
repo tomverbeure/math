@@ -3,6 +3,12 @@ package math
 
 import spinal.core._
 
+// Right now, doesn't support: overflows, denormals, NaN. 
+// A denormal gets replaced by zero, so that's ok.
+// But an overflow condition results in undefined behavior and a Nan as input gets
+// treated as some real number. This will need to be fixed eventually.
+// Also: no rounding at all. Stuff just gets truncated.
+
 class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 
     val io = new Bundle {
@@ -150,6 +156,10 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
     val mant_add_p4   = OptPipe(mant_add_p3,   p3_vld, p4_pipe_ena)
 
     //============================================================
+
+    // Doing leading zeros detection on the output of the adder adds directly to the critical path, or
+    // requires an additional pipeline stage. An alternative is to do leading zeros anticipation (LZA)
+    // and do it in parallel with the addition, but that's not done here.
 
     val lz_p4 = LeadingZeros(mant_add_p4.resize(c.mant_size+1).asBits)
     when(op_is_zero_p4){
