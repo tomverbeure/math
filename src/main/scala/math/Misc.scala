@@ -27,3 +27,10 @@ object LeadingZeros {
     }
 
 }
+
+object OptPipe {
+
+    def apply[T <: Data](that : T, ena: Bool, pipeline : Boolean) : T = if (pipeline) RegNextWhen(that, ena) else that
+
+    def apply[T <: Data](that : T, pipeline : Boolean) : T = apply(that, True, pipeline)
+}

@@ -14,9 +14,6 @@ class FpxxMul(c: FpxxConfig, pipeStages: Int = 1) extends Component {
         val result      = out(Fpxx(c))
     }
 
-    def optPipe[T <: Data](that : T, ena: Bool, pipeline : Boolean) : T = if (pipeline) RegNextWhen(that, ena) else that
-    def optPipe[T <: Data](that : T, pipeline : Boolean) : T = optPipe(that, True, pipeline)
-
     val p0_vld  = io.op_vld
     val op_a_p0 = io.op_a
     val op_b_p0 = io.op_b
@@ -36,13 +33,13 @@ class FpxxMul(c: FpxxConfig, pipeStages: Int = 1) extends Component {
     //============================================================
 
     val p1_pipe_ena = pipeStages >= 2
-    val p1_vld          = optPipe(p0_vld, p1_pipe_ena)
-    val op_is_zero_p1   = optPipe(op_is_zero_p0,   p0_vld, p1_pipe_ena)
-    val sign_mul_p1     = optPipe(sign_mul_p0,     p0_vld, p1_pipe_ena)
-    val exp_a_p1        = optPipe(exp_a_p0,        p0_vld, p1_pipe_ena)
-    val exp_b_p1        = optPipe(exp_b_p0,        p0_vld, p1_pipe_ena)
-    val mant_a_p1       = optPipe(mant_a_p0,       p0_vld, p1_pipe_ena)
-    val mant_b_p1       = optPipe(mant_b_p0,       p0_vld, p1_pipe_ena)
+    val p1_vld          = OptPipe(p0_vld, p1_pipe_ena)
+    val op_is_zero_p1   = OptPipe(op_is_zero_p0,   p0_vld, p1_pipe_ena)
+    val sign_mul_p1     = OptPipe(sign_mul_p0,     p0_vld, p1_pipe_ena)
+    val exp_a_p1        = OptPipe(exp_a_p0,        p0_vld, p1_pipe_ena)
+    val exp_b_p1        = OptPipe(exp_b_p0,        p0_vld, p1_pipe_ena)
+    val mant_a_p1       = OptPipe(mant_a_p0,       p0_vld, p1_pipe_ena)
+    val mant_b_p1       = OptPipe(mant_b_p0,       p0_vld, p1_pipe_ena)
 
     //============================================================
 
@@ -58,11 +55,11 @@ class FpxxMul(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 
     //============================================================
     val p2_pipe_ena = pipeStages >= 1
-    val p2_vld          = optPipe(p1_vld, p2_pipe_ena)
-    val op_is_zero_p2   = optPipe(op_is_zero_p1,   p1_vld, p2_pipe_ena)
-    val sign_mul_p2     = optPipe(sign_mul_p1,     p1_vld, p2_pipe_ena)
-    val exp_mul_p2      = optPipe(exp_mul_p1,      p1_vld, p2_pipe_ena)
-    val mant_mul_p2     = optPipe(mant_mul_p1,     p1_vld, p2_pipe_ena)
+    val p2_vld          = OptPipe(p1_vld, p2_pipe_ena)
+    val op_is_zero_p2   = OptPipe(op_is_zero_p1,   p1_vld, p2_pipe_ena)
+    val sign_mul_p2     = OptPipe(sign_mul_p1,     p1_vld, p2_pipe_ena)
+    val exp_mul_p2      = OptPipe(exp_mul_p1,      p1_vld, p2_pipe_ena)
+    val mant_mul_p2     = OptPipe(mant_mul_p1,     p1_vld, p2_pipe_ena)
     //============================================================
 
     val exp_mul_adj_p2  = SInt(c.exp_size+1 bits)

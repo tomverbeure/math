@@ -14,9 +14,6 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
         val result      = out(Fpxx(c))
     }
 
-    def optPipe[T <: Data](that : T, ena: Bool, pipeline : Boolean) : T = if (pipeline) RegNextWhen(that, ena) else that
-    def optPipe[T <: Data](that : T, pipeline : Boolean) : T = optPipe(that, True, pipeline)
-
     val p0_vld  = io.op_vld
     val op_a_p0 = io.op_a
     val op_b_p0 = io.op_b
@@ -74,15 +71,15 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 
     val p1_pipe_ena = pipeStages >= 3
 
-    val p1_vld          = optPipe(p0_vld, p1_pipe_ena)
-    val op_is_zero_p1   = optPipe(op_is_zero_p0,   p0_vld, p1_pipe_ena)
-    val sign_a_p1       = optPipe(sign_a_swap_p0,  p0_vld, p1_pipe_ena)
-    val sign_b_p1       = optPipe(sign_b_swap_p0,  p0_vld, p1_pipe_ena)
-    val exp_add_p1      = optPipe(exp_add_p0,      p0_vld, p1_pipe_ena)
-    val exp_diff_ovfl_p1= optPipe(exp_diff_ovfl_p0,p0_vld, p1_pipe_ena)
-    val exp_diff_p1     = optPipe(exp_diff_p0,     p0_vld, p1_pipe_ena)
-    val mant_a_p1       = optPipe(mant_a_swap_p0,  p0_vld, p1_pipe_ena)
-    val mant_b_p1       = optPipe(mant_b_swap_p0,  p0_vld, p1_pipe_ena)
+    val p1_vld          = OptPipe(p0_vld, p1_pipe_ena)
+    val op_is_zero_p1   = OptPipe(op_is_zero_p0,   p0_vld, p1_pipe_ena)
+    val sign_a_p1       = OptPipe(sign_a_swap_p0,  p0_vld, p1_pipe_ena)
+    val sign_b_p1       = OptPipe(sign_b_swap_p0,  p0_vld, p1_pipe_ena)
+    val exp_add_p1      = OptPipe(exp_add_p0,      p0_vld, p1_pipe_ena)
+    val exp_diff_ovfl_p1= OptPipe(exp_diff_ovfl_p0,p0_vld, p1_pipe_ena)
+    val exp_diff_p1     = OptPipe(exp_diff_p0,     p0_vld, p1_pipe_ena)
+    val mant_a_p1       = OptPipe(mant_a_swap_p0,  p0_vld, p1_pipe_ena)
+    val mant_b_p1       = OptPipe(mant_b_swap_p0,  p0_vld, p1_pipe_ena)
 
     //============================================================
 
@@ -96,13 +93,13 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 
     val p2_pipe_ena = pipeStages >= 1
 
-    val p2_vld        = optPipe(p1_vld, p2_pipe_ena)
-    val op_is_zero_p2 = optPipe(op_is_zero_p1, p1_vld, p2_pipe_ena)
-    val sign_a_p2     = optPipe(sign_a_p1,     p1_vld, p2_pipe_ena)
-    val sign_b_p2     = optPipe(sign_b_p1,     p1_vld, p2_pipe_ena)
-    val exp_add_p2    = optPipe(exp_add_p1,    p1_vld, p2_pipe_ena)
-    val mant_a_adj_p2 = optPipe(mant_a_adj_p1, p1_vld, p2_pipe_ena)
-    val mant_b_adj_p2 = optPipe(mant_b_adj_p1, p1_vld, p2_pipe_ena)
+    val p2_vld        = OptPipe(p1_vld, p2_pipe_ena)
+    val op_is_zero_p2 = OptPipe(op_is_zero_p1, p1_vld, p2_pipe_ena)
+    val sign_a_p2     = OptPipe(sign_a_p1,     p1_vld, p2_pipe_ena)
+    val sign_b_p2     = OptPipe(sign_b_p1,     p1_vld, p2_pipe_ena)
+    val exp_add_p2    = OptPipe(exp_add_p1,    p1_vld, p2_pipe_ena)
+    val mant_a_adj_p2 = OptPipe(mant_a_adj_p1, p1_vld, p2_pipe_ena)
+    val mant_b_adj_p2 = OptPipe(mant_b_adj_p1, p1_vld, p2_pipe_ena)
 
     //============================================================
 
@@ -131,12 +128,12 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 
     val p3_pipe_ena = pipeStages >= 4
 
-    val p3_vld            = optPipe(p2_vld, p3_pipe_ena)
-    val op_is_zero_p3     = optPipe(op_is_zero_p2,     p2_vld, p3_pipe_ena)
-    val sign_add_p3       = optPipe(sign_add_p2,       p2_vld, p3_pipe_ena)
-    val exp_add_p3        = optPipe(exp_add_p2,        p2_vld, p3_pipe_ena)
-    val mant_a_opt_inv_p3 = optPipe(mant_a_opt_inv_p2, p2_vld, p3_pipe_ena)
-    val mant_b_opt_inv_p3 = optPipe(mant_b_opt_inv_p2, p2_vld, p3_pipe_ena)
+    val p3_vld            = OptPipe(p2_vld, p3_pipe_ena)
+    val op_is_zero_p3     = OptPipe(op_is_zero_p2,     p2_vld, p3_pipe_ena)
+    val sign_add_p3       = OptPipe(sign_add_p2,       p2_vld, p3_pipe_ena)
+    val exp_add_p3        = OptPipe(exp_add_p2,        p2_vld, p3_pipe_ena)
+    val mant_a_opt_inv_p3 = OptPipe(mant_a_opt_inv_p2, p2_vld, p3_pipe_ena)
+    val mant_b_opt_inv_p3 = OptPipe(mant_b_opt_inv_p2, p2_vld, p3_pipe_ena)
 
     //============================================================
 
@@ -146,11 +143,11 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 
     val p4_pipe_ena = pipeStages >= 2
 
-    val p4_vld        = optPipe(p3_vld, p4_pipe_ena)
-    val op_is_zero_p4 = optPipe(op_is_zero_p3, p3_vld, p4_pipe_ena)
-    val sign_add_p4   = optPipe(sign_add_p3,   p3_vld, p4_pipe_ena)
-    val exp_add_p4    = optPipe(exp_add_p3,    p3_vld, p4_pipe_ena)
-    val mant_add_p4   = optPipe(mant_add_p3,   p3_vld, p4_pipe_ena)
+    val p4_vld        = OptPipe(p3_vld, p4_pipe_ena)
+    val op_is_zero_p4 = OptPipe(op_is_zero_p3, p3_vld, p4_pipe_ena)
+    val sign_add_p4   = OptPipe(sign_add_p3,   p3_vld, p4_pipe_ena)
+    val exp_add_p4    = OptPipe(exp_add_p3,    p3_vld, p4_pipe_ena)
+    val mant_add_p4   = OptPipe(mant_add_p3,   p3_vld, p4_pipe_ena)
 
     //============================================================
 
@@ -176,11 +173,11 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 
     val p5_pipe_ena = pipeStages >= 5
 
-    val p5_vld        = optPipe(p4_vld, p4_pipe_ena)
-    val lz_p5         = optPipe(lz_p4,           p4_vld, p5_pipe_ena)
-    val sign_add_p5   = optPipe(sign_add_p4,     p4_vld, p5_pipe_ena)
-    val exp_add_p5    = optPipe(exp_add_adj_p4,  p4_vld, p5_pipe_ena)
-    val mant_add_p5   = optPipe(mant_add_adj_p4, p4_vld, p5_pipe_ena)
+    val p5_vld        = OptPipe(p4_vld, p4_pipe_ena)
+    val lz_p5         = OptPipe(lz_p4,           p4_vld, p5_pipe_ena)
+    val sign_add_p5   = OptPipe(sign_add_p4,     p4_vld, p5_pipe_ena)
+    val exp_add_p5    = OptPipe(exp_add_adj_p4,  p4_vld, p5_pipe_ena)
+    val mant_add_p5   = OptPipe(mant_add_adj_p4, p4_vld, p5_pipe_ena)
 
     //============================================================
 
