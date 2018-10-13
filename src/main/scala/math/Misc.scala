@@ -55,7 +55,7 @@ object Fp64 {
     def asBits(f: Double) : Long = java.lang.Double.doubleToLongBits(f)
 
     def sign(f : Double) = asBits(f) >> (exp_bits + mant_bits)
-    def exp(f : Double)  = asBits(f) & exp_mask
+    def exp(f : Double)  = (asBits(f) >> mant_bits) & exp_mask
     def mant(f : Double) = asBits(f) & mant_mask
 
     def isRegular(f : Double) : Boolean = {
