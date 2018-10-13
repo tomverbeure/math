@@ -7,22 +7,6 @@ import spinal.core.sim._
 
 object FpxxDemoTests {
 
-    def print_bits(f: Float) = {
-        var fl : Long = java.lang.Float.floatToIntBits(f) & 0x00000000ffffffffL
-
-        printf("%d ", (fl>>30)&1)
-        var i=30
-        while(i>=23){
-            printf("%d", (fl>>i)&1)
-            i-=1
-        }
-        printf(" ")
-        while(i>=0){
-            printf("%d", (fl>>i)&1)
-            i-=1
-        }
-    }
-
     def countLeadingZeros(lz_in: Long) : Int = {
         var i=22
         var nrZeros = 0
@@ -33,7 +17,7 @@ object FpxxDemoTests {
         nrZeros
     }
 
-    def randomNormalFloat(rand: scala.util.Random) : Float = {
+    def randomRegularFloat(rand: scala.util.Random) : Float = {
         var ai : Int = 0
         var af : Float = 0.0f
         do {
@@ -46,27 +30,27 @@ object FpxxDemoTests {
 
     def resultMatches(opA: Float, opB: Float, expected: Float, actual: Float, verbose: Boolean = false) : Boolean = {
 
-        val actualMant   : Long = java.lang.Float.floatToIntBits(actual)   & 0x00000000007fffffL
-        val expectedMant : Long = java.lang.Float.floatToIntBits(expected) & 0x00000000007fffffL
+        val actualMant   : Long = Fp32.mant(actual)
+        val expectedMant : Long = Fp32.mant(expected)
 
         if ((actualMant-expectedMant).abs > 15 && Fp32.isRegular(expected)){
             printf("ERROR!\n")
             printf("op A:     ")
-            print_bits(opA)
-            printf("    %15e  %08x\n", opA, java.lang.Float.floatToIntBits(opA));
+            Fp32.print_bits(opA)
+            printf("    %15e  %08x\n", opA, Fp32.asBits(opA));
 
             printf("op B:     ")
-            print_bits(opB)
-            printf("    %15e  %08x\n", opB, java.lang.Float.floatToIntBits(opB));
+            Fp32.print_bits(opB)
+            printf("    %15e  %08x\n", opB, Fp32.asBits(opB));
             printf("\n")
 
             printf("Expected: ")
-            print_bits(expected)
-            printf("    %15e  %08x\n", expected, java.lang.Float.floatToIntBits(expected));
+            Fp32.print_bits(expected)
+            printf("    %15e  %08x\n", expected, Fp32.asBits(expected));
 
             printf("Actual  : ")
-            print_bits(actual)
-            printf("    %15e  %08x\n", actual, java.lang.Float.floatToIntBits(actual));
+            Fp32.print_bits(actual)
+            printf("    %15e  %08x\n", actual, Fp32.asBits(actual));
 
             false
         }
@@ -137,7 +121,7 @@ object FpxxDemoTests {
                     inputs = stimuli(i)
                 }
                 else{
-                    inputs = ( randomNormalFloat(rand), randomNormalFloat(rand) )
+                    inputs = ( randomRegularFloat(rand), randomRegularFloat(rand) )
                 }
 
                 var op_a  = inputs._1
@@ -145,8 +129,8 @@ object FpxxDemoTests {
                 var sum_exp = op_a + op_b
 
                 // Convert signed int to positive long
-                var op_a_long : Long = java.lang.Float.floatToIntBits(op_a) & 0x00000000ffffffffL
-                var op_b_long : Long = java.lang.Float.floatToIntBits(op_b) & 0x00000000ffffffffL
+                var op_a_long : Long = Fp32.asBits(op_a)
+                var op_b_long : Long = Fp32.asBits(op_b)
 
                 // Apply operands
                 dut.io.op_vld #= true

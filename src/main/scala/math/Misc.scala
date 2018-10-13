@@ -24,6 +24,24 @@ object Fp32 {
     def isDenormal(f : Float) : Boolean = {
         exp(f) == 0 && mant(f) != 0
     }
+
+    def print_bits(f: Float) = {
+
+        printf("%d ", sign(f))
+
+        var i=exp_bits-1
+        while(i>=0){
+            printf("%d", (exp(f)>>i)&1)
+            i-=1
+        }
+
+        printf(" ")
+        i=mant_bits-1
+        while(i>=0){
+            printf("%d", (mant(f)>>i)&1)
+            i-=1
+        }
+    }
 }
 
 object Fp64 {
