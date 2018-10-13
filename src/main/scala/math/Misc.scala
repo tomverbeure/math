@@ -3,6 +3,52 @@ package math
 
 import spinal.core._
 
+object Fp32 {
+
+    def exp_bits    = 8
+    def exp_mask    = (1L<<exp_bits)-1
+    def mant_bits   = 23
+    def mant_mask   = (1L<<mant_bits)-1
+    def bias        = 127
+
+    def asBits(f: Float) : Long = java.lang.Float.floatToIntBits(f) & 0x00000000ffffffffL
+
+    def sign(f : Float) = asBits(f) >> (exp_bits + mant_bits)
+    def exp(f : Float)  = (asBits(f) >> mant_bits) & exp_mask
+    def mant(f : Float) = asBits(f) & mant_mask
+
+    def isRegular(f : Float) : Boolean = {
+        !f.isInfinite() && !f.isNaN() && !isDenormal(f)
+    }
+
+    def isDenormal(f : Float) : Boolean = {
+        exp(f) == 0 && mant(f) != 0
+    }
+}
+
+object Fp64 {
+
+    def exp_bits    = 11
+    def exp_mask    = (1L<<exp_bits)-1
+    def mant_bits   = 52
+    def mant_mask   = (1L<<mant_bits)-1
+    def bias        = 1024
+
+    def asBits(f: Double) : Long = java.lang.Double.doubleToLongBits(f)
+
+    def sign(f : Double) = asBits(f) >> (exp_bits + mant_bits)
+    def exp(f : Double)  = asBits(f) & exp_mask
+    def mant(f : Double) = asBits(f) & mant_mask
+
+    def isRegular(f : Double) : Boolean = {
+        !f.isInfinite() && !f.isNaN() && !isDenormal(f)
+    }
+
+    def isDenormal(f : Double) : Boolean = {
+        exp(f) == 0 && mant(f) != 0
+    }
+}
+
 object LeadingZeros {
 
     // Calculate leading zeros. Solution is based on method described here:

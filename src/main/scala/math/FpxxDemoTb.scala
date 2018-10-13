@@ -33,23 +33,13 @@ object FpxxDemoTests {
         nrZeros
     }
 
-    def isDenormal(f : Float) : Boolean = {
-        val fi : Int = java.lang.Float.floatToIntBits(f)
-
-        (((fi>>23) & 0xff) == 0) && ((fi & 0x007fffff) != 0)
-    }
-
-    def isRegular(f : Float) : Boolean = {
-        !f.isInfinite() && !f.isNaN() && !isDenormal(f)
-    }
-
     def randomNormalFloat(rand: scala.util.Random) : Float = {
         var ai : Int = 0
         var af : Float = 0.0f
         do {
             ai = rand.nextInt
             af = java.lang.Float.intBitsToFloat(ai)
-        } while(!isRegular(af))
+        } while(!Fp32.isRegular(af))
 
         af
     }
@@ -59,7 +49,7 @@ object FpxxDemoTests {
         val actualMant   : Long = java.lang.Float.floatToIntBits(actual)   & 0x00000000007fffffL
         val expectedMant : Long = java.lang.Float.floatToIntBits(expected) & 0x00000000007fffffL
 
-        if ((actualMant-expectedMant).abs > 15 && isRegular(expected)){
+        if ((actualMant-expectedMant).abs > 15 && Fp32.isRegular(expected)){
             printf("ERROR!\n")
             printf("op A:     ")
             print_bits(opA)
