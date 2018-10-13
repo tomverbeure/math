@@ -55,7 +55,18 @@ Articles on two-complement floating point
 
     Links to conversion code.
 
-Leading Zero Circuits
+Leading Zero Counter (LZC)
+
+* [Modular Design of Fast Leading Zeros Counting Circuit](https://www.degruyter.com/downloadpdf/j/jee.2015.66.issue-6/jee-2015-0054/jee-2015-0054.pdf)
+
+   Very fast and low area regular leading zero counting implementation.
+   
+* [Stack Exchange Hierarchical Solution](https://electronics.stackexchange.com/questions/196914/verilog-synthesize-high-speed-leading-zero-count)
+
+   Neat implementation, but apparently not nearly as area and speed efficient as the implementation of the previous bullet point.
+   (See also [this video](https://www.youtube.com/watch?v=lZ1DqG0Pn_I)
+
+Leading Zero Anticipator (LZA)
 
 * [Leading-Zero Anticipatory Logic for High-Speed Floating Point Addition](http://soc.knu.ac.kr/video_lectures/11_7.pdf) (1995)
 
