@@ -146,29 +146,37 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
 
     exp_adj_p5   := exp_full_p5 + exp_delta_p5
 
-    val sign_final_p5 = Bool
-    val exp_final_p5  = UInt(c.exp_size bits)
-    val div_final_p5  = UInt(c.mant_size bits)
+    //============================================================
+    val p6_pipe_ena     = pipeStages >= 3
+    val p6_vld          = OptPipe(p5_vld, p6_pipe_ena)
+    val sign_p6         = OptPipe(sign_p5, p5_vld, p6_pipe_ena)
+    val div_adj_p6      = OptPipe(div_adj_p5, p5_vld, p6_pipe_ena)
+    val exp_adj_p6      = OptPipe(exp_adj_p5, p5_vld, p6_pipe_ena)
+    //============================================================
 
-    when(exp_adj_p5 > ((1<<c.exp_size)-1)){
-        sign_final_p5 := False
-        exp_final_p5.setAll
-        div_final_p5.setAll
+    val sign_final_p6 = Bool
+    val exp_final_p6  = UInt(c.exp_size bits)
+    val div_final_p6  = UInt(c.mant_size bits)
+
+    when(exp_adj_p6 > ((1<<c.exp_size)-1)){
+        sign_final_p6 := False
+        exp_final_p6.setAll
+        div_final_p6.setAll
     }
-    .elsewhen(exp_adj_p5 <= 0){
-        sign_final_p5 := False
-        exp_final_p5.clearAll
-        div_final_p5.clearAll
+    .elsewhen(exp_adj_p6 <= 0){
+        sign_final_p6 := False
+        exp_final_p6.clearAll
+        div_final_p6.clearAll
     }
     .otherwise{
-        sign_final_p5 := sign_p5
-        exp_final_p5  := exp_adj_p5(0, c.exp_size bits).asUInt
-        div_final_p5  := div_adj_p5
+        sign_final_p6 := sign_p6
+        exp_final_p6  := exp_adj_p6(0, c.exp_size bits).asUInt
+        div_final_p6  := div_adj_p6
     }
 
-    io.result_vld   := p5_vld
-    io.result.sign  := sign_final_p5
-    io.result.exp   := exp_final_p5
-    io.result.mant  := div_final_p5
+    io.result_vld   := p6_vld
+    io.result.sign  := sign_final_p6
+    io.result.exp   := exp_final_p6
+    io.result.mant  := div_final_p6
 
 }
