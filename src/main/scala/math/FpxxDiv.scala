@@ -74,15 +74,16 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
     val recip_yh2_p1    = U(1, 1 bits) @@ div_val_p1(2, lutMantBits bits)
     val recip_shift_p1  = div_val_p1(0, 2 bits)
 
+    val exp_full_p1  = exp_p1.resize(c.exp_size+2) - recip_shift_p1.resize(c.exp_size+2).asSInt + S(c.bias+1, c.exp_size+2 bits)
+
     //============================================================
     val p2_pipe_ena     = pipeStages >= 1
     val p2_vld          = OptPipe(p1_vld, p2_pipe_ena)
     val yh_m_yl_p2      = OptPipe(yh_m_yl_p1, p1_vld, p2_pipe_ena)
-    val mant_a_p2       = OptPipe(mant_a_p1, p1_vld, p1_pipe_ena)
-    val sign_p2         = OptPipe(sign_p1, p0_vld, p1_pipe_ena)
-    val exp_p2          = OptPipe(exp_p1, p0_vld, p1_pipe_ena)
+    val mant_a_p2       = OptPipe(mant_a_p1, p1_vld, p2_pipe_ena)
+    val sign_p2         = OptPipe(sign_p1, p1_vld, p2_pipe_ena)
     val recip_yh2_p2    = OptPipe(recip_yh2_p1, p1_vld, p2_pipe_ena)
-    val recip_shift_p2  = OptPipe(recip_shift_p1, p1_vld, p2_pipe_ena)
+    val exp_full_p2     = OptPipe(exp_full_p1, p1_vld, p2_pipe_ena)
     //============================================================
 
     val mant_a_full_p2  = U(1, 1 bits) @@ mant_a_p2
@@ -93,9 +94,10 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
     //============================================================
     val p3_pipe_ena     = pipeStages >= 1
     val p3_vld          = OptPipe(p2_vld, p3_pipe_ena)
+    val sign_p3         = OptPipe(sign_p2, p2_vld, p3_pipe_ena)
     val x_mul_yhyl_p3   = OptPipe(x_mul_yhyl_p2, p2_vld, p3_pipe_ena)
     val recip_yh2_p3    = OptPipe(recip_yh2_p2, p2_vld, p3_pipe_ena)
-    val recip_shift_p3  = OptPipe(recip_shift_p2, p2_vld, p3_pipe_ena)
+    val exp_full_p3     = OptPipe(exp_full_p2, p2_vld, p3_pipe_ena)
     //============================================================
 
     // Empty stage: useful for routing from output of one multiplier to input of next multiplier
@@ -103,9 +105,10 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
     //============================================================
     val p4_pipe_ena     = pipeStages >= 2
     val p4_vld          = OptPipe(p3_vld, p4_pipe_ena)
+    val sign_p4         = OptPipe(sign_p3, p3_vld, p4_pipe_ena)
     val x_mul_yhyl_p4   = OptPipe(x_mul_yhyl_p3, p3_vld, p4_pipe_ena)
     val recip_yh2_p4    = OptPipe(recip_yh2_p3, p3_vld, p4_pipe_ena)
-    val recip_shift_p4  = OptPipe(recip_shift_p3, p3_vld, p4_pipe_ena)
+    val exp_full_p4     = OptPipe(exp_full_p3, p3_vld, p4_pipe_ena)
     //============================================================
 
     val div_full_p4 = x_mul_yhyl_p4 * recip_yh2_p4
@@ -115,14 +118,54 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
     //============================================================
     val p5_pipe_ena     = pipeStages >= 2
     val p5_vld          = OptPipe(p4_vld, p5_pipe_ena)
+    val sign_p5         = OptPipe(sign_p4, p4_vld, p5_pipe_ena)
     val div_p5          = OptPipe(div_p4, p4_vld, p5_pipe_ena)
-    val recip_shift_p5  = OptPipe(recip_shift_p4, p4_vld, p5_pipe_ena)
+    val exp_full_p5     = OptPipe(exp_full_p4, p4_vld, p5_pipe_ena)
     //============================================================
 
+    val div_adj_p5 = UInt(c.mant_size bits)
+    val exp_adj_p5 = SInt(c.exp_size+2 bits)
 
-    io.result_vld   := False
-    io.result.sign  := False
-    io.result.exp   := 0
-    io.result.mant  := 0
+    when(div_p5(2*halfBits+1)){
+        div_adj_p5 := (div_p5 >> 1).resize(2*halfBits-1)
+        exp_adj_p5   := exp_full_p5 + 1
+    }
+    .elsewhen(div_p5(2*halfBits-1, 2 bits) === U"01"){
+        div_adj_p5 := (div_p5 << 1).resize(2*halfBits-1)
+        exp_adj_p5   := exp_full_p5 - 1
+    }
+    .elsewhen(div_p5(2*halfBits-2, 3 bits) === U"001"){
+        div_adj_p5 := (div_p5 << 2).resize(2*halfBits-1)
+        exp_adj_p5   := exp_full_p5 - 2
+    }
+    .otherwise{
+        div_adj_p5 := div_p5.resize(2*halfBits-1)
+        exp_adj_p5   := exp_full_p5
+    }
+
+    val sign_final_p5 = Bool
+    val exp_final_p5  = UInt(c.exp_size bits)
+    val div_final_p5  = UInt(c.mant_size bits)
+
+    when(exp_adj_p5 > ((1<<c.exp_size)-1)){
+        sign_final_p5 := False
+        exp_final_p5.setAll
+        div_final_p5.setAll
+    }
+    .elsewhen(exp_adj_p5 <= 0){
+        sign_final_p5 := False
+        exp_final_p5.clearAll
+        div_final_p5.clearAll
+    }
+    .otherwise{
+        sign_final_p5 := sign_p5
+        exp_final_p5  := exp_adj_p5(0, c.exp_size bits).asUInt
+        div_final_p5  := div_adj_p5
+    }
+
+    io.result_vld   := p5_vld
+    io.result.sign  := sign_final_p5
+    io.result.exp   := exp_final_p5
+    io.result.mant  := div_final_p5
 
 }
