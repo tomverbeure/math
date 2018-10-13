@@ -125,23 +125,26 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
 
     val div_adj_p5 = UInt(c.mant_size bits)
     val exp_adj_p5 = SInt(c.exp_size+2 bits)
+    val exp_delta_p5 = SInt(c.exp_size+2 bits)
 
     when(div_p5(2*halfBits+1)){
-        div_adj_p5 := (div_p5 >> 1).resize(2*halfBits-1)
-        exp_adj_p5   := exp_full_p5 + 1
+        div_adj_p5      := (div_p5 >> 1).resize(2*halfBits-1)
+        exp_delta_p5    := 1
     }
     .elsewhen(div_p5(2*halfBits-1, 2 bits) === U"01"){
         div_adj_p5 := (div_p5 << 1).resize(2*halfBits-1)
-        exp_adj_p5   := exp_full_p5 - 1
+        exp_delta_p5    := -1
     }
     .elsewhen(div_p5(2*halfBits-2, 3 bits) === U"001"){
-        div_adj_p5 := (div_p5 << 2).resize(2*halfBits-1)
-        exp_adj_p5   := exp_full_p5 - 2
+        div_adj_p5      := (div_p5 << 2).resize(2*halfBits-1)
+        exp_delta_p5    := -2
     }
     .otherwise{
-        div_adj_p5 := div_p5.resize(2*halfBits-1)
-        exp_adj_p5   := exp_full_p5
+        div_adj_p5      := div_p5.resize(2*halfBits-1)
+        exp_delta_p5    := 0
     }
+
+    exp_adj_p5   := exp_full_p5 + exp_delta_p5
 
     val sign_final_p5 = Bool
     val exp_final_p5  = UInt(c.exp_size bits)
