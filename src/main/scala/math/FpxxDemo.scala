@@ -22,9 +22,6 @@ class FpxxDemo extends Component {
 
         val op_a_div_op_b_vld   = out(Bool)
         val op_a_div_op_b       = out(Bits(config.full_size bits))
-
-        val lz_in       = in(Bits(23 bits))
-        val lz          = out(UInt(5 bits))
     }
 
     noIoPrefix()
@@ -83,8 +80,6 @@ class FpxxDemo extends Component {
 
         io.op_a_div_op_b_vld := RegNext(div.io.result_vld)
         io.op_a_div_op_b     := RegNext(div.io.result).toVec()
-
-        io.lz := RegNext(LeadingZeros(io.lz_in))
     }
 }
 
