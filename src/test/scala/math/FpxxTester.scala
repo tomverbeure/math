@@ -11,8 +11,8 @@ class FpxxTester extends FunSuite {
 
     var compiled: SimCompiled[FpxxDemo] = null
 
-    def countLeadingZeros(lz_in: Long) : Int = {
-        var i=22
+    def countLeadingZeros(lz_in: Long, activeBits: Int) : Int = {
+        var i=activeBits-1
         var nrZeros = 0
         while(i>=0 && (lz_in&(1<<i))==0){
             nrZeros += 1
@@ -28,6 +28,11 @@ class FpxxTester extends FunSuite {
     }
 
     test("LeadingZeros") { 
+
+        compiled = SimConfig
+            .withWave
+            .compile(new FpxxDemo())
+
         compiled.doSim { dut =>
 
             val oscClkPeriod = 10;  // 10 ns
@@ -41,7 +46,8 @@ class FpxxTester extends FunSuite {
 
             println("Start...")
 
-            println("\n\nTesting LeadingZeros...\n\n")
+            printf("\nTesting LeadingZeros...\n")
+            printf("lz_in size: %d\n\n", dut.io.lz_in.getWidth)
 
             var pass = 0
             var fail = 0
@@ -54,7 +60,7 @@ class FpxxTester extends FunSuite {
                 dut.io.lz_in #= lz_in
                 clockDomain.waitSampling(3)
 
-                var lz_exp = countLeadingZeros(lz_in)
+                var lz_exp = countLeadingZeros(lz_in, dut.io.lz_in.getWidth)
                 val lz_act = dut.io.lz.toInt
 
                 if (lz_exp != lz_act){
