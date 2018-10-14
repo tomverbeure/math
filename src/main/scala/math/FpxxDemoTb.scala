@@ -7,16 +7,6 @@ import spinal.core.sim._
 
 object FpxxDemoTests {
 
-    def countLeadingZeros(lz_in: Long) : Int = {
-        var i=22
-        var nrZeros = 0
-        while(i>=0 && (lz_in&(1<<i))==0){
-            nrZeros += 1
-            i -= 1
-        }
-        nrZeros
-    }
-
     def randomRegularFloat(rand: scala.util.Random) : Float = {
         var ai : Int = 0
         var af : Float = 0.0f
@@ -73,32 +63,12 @@ object FpxxDemoTests {
 
             println("Start...")
 
-            println("\n\nTesting LeadingZeros...\n\n")
-
             var pass = 0
             var fail = 0
 
             var rand = new scala.util.Random(0)
+
             var i=0
-            while(i<1000){
-                var lz_in : Long = (rand.nextLong & 0x00000000007fffff) >> (rand.nextInt & 0x1f)
-
-                dut.io.lz_in #= lz_in
-                clockDomain.waitSampling(3)
-
-                var lz_exp = countLeadingZeros(lz_in)
-                val lz_act = dut.io.lz.toInt
-
-                if (lz_exp != lz_act){
-                    printf("%6d: %6x: Expected: %2d, Actual: %2d - %s\n", i, lz_in, lz_exp, lz_act, if (lz_exp == lz_act) "Pass" else "Fail")
-                    fail += 1
-                }
-                else {
-                    pass += 1
-                }
-                i+=1
-            }
-            printf("LeadingZeros: %d PASSED, %d FAILED\n", pass, fail);
 
             println("\n\nTesting FpAdd...\n\n")
 
