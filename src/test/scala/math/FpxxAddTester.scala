@@ -7,7 +7,7 @@ import spinal.sim._
 import spinal.core._
 import spinal.core.sim._
 
-object FpxxTester {
+object FpxxAddTester {
 
     class FpxxAddDut(config: FpxxConfig) extends Component {
         val io = new Bundle {
@@ -29,7 +29,7 @@ object FpxxTester {
     }
 }
 
-class FpxxTester extends FunSuite {
+class FpxxAddTester extends FunSuite {
 
 /*
     var compiled: SimCompiled[FpxxDemo] = null
@@ -47,7 +47,7 @@ class FpxxTester extends FunSuite {
 
         var compiled = SimConfig
             .withWave
-            .compile(new FpxxTester.FpxxAddDut(config))
+            .compile(new FpxxAddTester.FpxxAddDut(config))
 
         compiled.doSim { dut =>
 
