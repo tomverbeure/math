@@ -10,13 +10,31 @@ import spinal.core.sim._
 object FpxxTester {
 
     class LeadingZerosDut extends Component {
-
         val io = new Bundle {
             val lz_in       = in(Bits(23 bits))
             val lz          = out(UInt(5 bits))
         }
 
         io.lz := RegNext(LeadingZeros(io.lz_in))
+    }
+
+    class FpxxAddDut(config: FpxxConfig) extends Component {
+        val io = new Bundle {
+            val op_vld      = in(Bool)
+            val op_a        = in(Bits(config.full_size bits))
+            val op_b        = in(Bits(config.full_size bits))
+
+            val result_vld  = out(Bool)
+            val result      = out(Bits(config.full_size bits))
+        }
+
+        val fp_op = new FpxxAdd(config, pipeStages = 5)
+        fp_op.io.op_vld :=    RegNext(io.op_vld)
+        fp_op.io.op_a.fromVec(RegNext(io.op_a))
+        fp_op.io.op_b.fromVec(RegNext(io.op_b))
+
+        io.result_vld := RegNext(fp_op.io.result_vld)
+        io.result     := RegNext(fp_op.io.result).toVec()
     }
 }
 
@@ -83,6 +101,23 @@ class FpxxTester extends FunSuite {
                 i+=1
             }
             printf("LeadingZeros: %d PASSED, %d FAILED\n", pass, fail);
+        }
+    }
+
+    test("FpxxAdd") {
+
+        val config = FpxxConfig(8, 23)
+
+        var compiled = SimConfig
+            .withWave
+            .compile(new FpxxTester.FpxxAddDut(config))
+
+        compiled.doSim { dut =>
+
+            dut.clockDomain.forkStimulus(period = 10)
+            dut.clockDomain.forkSimSpeedPrinter(0.2)
+
+            dut.clockDomain.waitSampling()
         }
     }
 
