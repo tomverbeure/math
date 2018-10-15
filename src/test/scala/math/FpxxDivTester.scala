@@ -31,16 +31,6 @@ object FpxxDivTester {
 
 class FpxxDivTester extends FunSuite {
 
-/*
-    var compiled: SimCompiled[FpxxDemo] = null
-
-    test("compile") {
-        compiled = SimConfig
-            .allOptimisation
-            .compile(new FpxxDemo())
-    }
-*/
-
     def printAll(opA: Float, opB: Float, expected: Float, actual: Float) {
         printf("op A:     ")
         Fp32.print(opA)
@@ -70,8 +60,8 @@ class FpxxDivTester extends FunSuite {
         matches |= Fp32.isInfinite(expected) && Fp32.isInfinite(actual)
         matches |= Fp32.isNaN(expected)      && Fp32.isNaN(actual)
         matches |= (Fp32.exp(expected)  == Fp32.exp(actual))  &&
-                 (Fp32.sign(expected) == Fp32.sign(actual)) &&
-                 ((Fp32.mant(expected) - Fp32.mant(actual)).abs < 3)
+                   (Fp32.sign(expected) == Fp32.sign(actual)) &&
+                   ((Fp32.mant(expected) - Fp32.mant(actual)).abs < 4)
 
         if (!matches){
             printf("\n")
@@ -94,7 +84,7 @@ class FpxxDivTester extends FunSuite {
         val config = FpxxConfig(8, 23)
 
         var compiled = SimConfig
-            .withWave
+//            .withWave
             .compile(new FpxxDivTester.FpxxDivDut(config))
 
         compiled.doSim { dut =>
@@ -119,7 +109,7 @@ class FpxxDivTester extends FunSuite {
             var pass = 0
             var fail = 0
 
-            while(i < stimuli.size || i < 1000) {
+            while(i < stimuli.size || i < 1000000) {
                 var inputs : (Float, Float) = (0.0f, 0.0f)
                 if (i < stimuli.size){
                     inputs = stimuli(i)
@@ -154,9 +144,8 @@ class FpxxDivTester extends FunSuite {
 
                 dut.clockDomain.waitSampling()
 
-                if (resultMatches(op_a, op_b, result_exp, result_act, verbose = true)){
+                if (resultMatches(op_a, op_b, result_exp, result_act, verbose = false)){
                     pass += 1
-                    printf("--------\n")
                 }
                 else {
                     fail += 1
