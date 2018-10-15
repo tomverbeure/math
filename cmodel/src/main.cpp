@@ -252,7 +252,11 @@ int main(int argc, char **argv)
 
     fpxx<23,8> my_fp, left, right;
 
-#if 0
+#if 1
+    left  = 1; right = 100000000;
+    my_fp = left / right;
+    cout << left << "/" << right << "=" << my_fp << "(" << (float)left/(float)right << ")" <<  endl;
+
     left  = 1.999; right = 1.999;
     my_fp = left / right;
     cout << left << "/" << right << "=" << my_fp << "(" << (float)left/(float)right << ")" <<  endl;
@@ -278,10 +282,9 @@ int main(int argc, char **argv)
     cout << left << "/" << right << "=" << my_fp << "(" << (float)left/(float)right << ")" <<  endl;
 #endif
 
-//    left = 3.494705e-06;
-//    right = -4.046430e-06;
-    left  = int_as_float(0x64f9bf6f);
-    right = int_as_float(0xe504bbd2);
+#if 0
+    left = 3.494705e-06;
+    right = -4.046430e-06;
     my_fp = left + right;
     float fp32 = (float)left + (float)right;
     cout << left << " + " << right << " = " << my_fp << " (" << fp32 << ")" <<  endl;
@@ -292,6 +295,7 @@ int main(int argc, char **argv)
     print_fp32_fpxx((float)right, right);
     printf("Result:\n");
     print_fp32_fpxx(fp32, my_fp);
+#endif
 
 #if 0
     cout << "--------------" << endl;

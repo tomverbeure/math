@@ -51,8 +51,8 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
 
     //============================================================
 
-    val yh_p0       = (U(1, 1 bits) @@ op_b_p0.mant)(halfBits, halfBits bits) << halfBits
-    val yl_p0       = op_b_p0.mant(0, halfBits bits).resize(2*halfBits)
+    val yh_p0       = (U(1, 1 bits) @@ op_b_p0.mant)(halfBits-1, halfBits+1 bits) << (halfBits-1)
+    val yl_p0       = op_b_p0.mant(0, halfBits-1 bits).resize(2*halfBits)
 
     val yh_m_yl_p0  = yh_p0 - yl_p0
     val div_addr_p0 = op_b_p0.mant >> (c.mant_size-tableSizeBits)
