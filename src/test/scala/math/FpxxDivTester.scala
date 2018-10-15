@@ -89,7 +89,7 @@ class FpxxDivTester extends FunSuite {
         }
     }
 
-    test("FpxxDivDirected") {
+    test("FpxxDiv") {
 
         val config = FpxxConfig(8, 23)
 
@@ -114,12 +114,20 @@ class FpxxDivTester extends FunSuite {
                                 (100, -99.9999f)
                             )
 
+            var rand = new scala.util.Random(0)
             var i = 0
             var pass = 0
             var fail = 0
 
-            while(i < stimuli.size) {
-                val inputs = stimuli(i)
+            while(i < stimuli.size || i < 1000) {
+                var inputs : (Float, Float) = (0.0f, 0.0f)
+                if (i < stimuli.size){
+                    inputs = stimuli(i)
+                }
+                else{
+                    inputs = ( Fp32.randomRegular(rand), Fp32.randomRegular(rand) )
+                }
+
 
                 val op_a        = inputs._1
                 val op_b        = inputs._2
@@ -159,7 +167,6 @@ class FpxxDivTester extends FunSuite {
                 }
 
                 if (i%1000 == 0) printf(".")
-
                 i+=1
             }
 
