@@ -20,11 +20,11 @@ object FpxxDivTester {
         }
 
         val fp_op = new FpxxDiv(config, FpxxDivConfig(pipeStages = 5) )
-        fp_op.io.op_vld :=    RegNext(io.op_vld)
+        fp_op.io.op_vld :=    RegNext(io.op_vld) init(False)
         fp_op.io.op_a.fromVec(RegNext(io.op_a))
         fp_op.io.op_b.fromVec(RegNext(io.op_b))
 
-        io.result_vld := RegNext(fp_op.io.result_vld)
+        io.result_vld := RegNext(fp_op.io.result_vld) init(False)
         io.result     := RegNext(fp_op.io.result).toVec()
     }
 }
@@ -65,7 +65,15 @@ class FpxxDivTester extends FunSuite {
         val actualMant   : Long = Fp32.mant(actual)
         val expectedMant : Long = Fp32.mant(expected)
 
-        if ((actualMant-expectedMant).abs > 2 && Fp32.isRegular(expected)){
+        var matches = false
+        matches |= Fp32.isDenormal(expected) && Fp32.isZero(actual)
+        matches |= Fp32.isInfinite(expected) && Fp32.isInfinite(actual)
+        matches |= Fp32.isNaN(expected)      && Fp32.isNaN(actual)
+        matches |= (Fp32.exp(expected)  == Fp32.exp(actual))  &&
+                 (Fp32.sign(expected) == Fp32.sign(actual)) &&
+                 ((Fp32.mant(expected) - Fp32.mant(actual)).abs < 3)
+
+        if (!matches){
             printf("\n")
             printf("ERROR!\n")
             printAll(opA, opB, expected, actual);
@@ -73,14 +81,13 @@ class FpxxDivTester extends FunSuite {
             false
         }
         else{
-            if (verbose){ 
+            if (verbose){
                 printf("Match!\n")
                 printAll(opA, opB, expected, actual);
             }
             true
         }
     }
-
 
     test("FpxxDivDirected") {
 
@@ -94,10 +101,12 @@ class FpxxDivTester extends FunSuite {
 
             dut.clockDomain.forkStimulus(period = 10)
             dut.clockDomain.forkSimSpeedPrinter(0.2)
+            dut.io.op_vld #= false
             dut.clockDomain.waitSampling()
 
             val stimuli = Array[(Float, Float)](
                                 (0,0), (0,1), (1,0),
+                                (0,-0), (0,-1), (-1,0),
                                 (1,1), (1, -1), (-1, 1), (-1, -1),
                                 (100, 1), (-100, 1), (100, -1), (1, -100), (-1, 100), (-100, -1), (-1, -100),
                                 (100000000, 1), (1, 100000000),

@@ -18,13 +18,26 @@ object Fp32 {
     def exp(f : Float)  = (asBits(f) >> mant_bits) & exp_mask
     def mant(f : Float) = asBits(f) & mant_mask
 
-    def isRegular(f : Float) : Boolean = {
-        !f.isInfinite() && !f.isNaN() && !isDenormal(f)
-    }
-
     def isDenormal(f : Float) : Boolean = {
         exp(f) == 0 && mant(f) != 0
     }
+
+    def isZero(f : Float) : Boolean = {
+        exp(f) == 0 && mant(f) == 0
+    }
+
+    def isNaN(f : Float) : Boolean = {
+        f.isNaN()
+    }
+
+    def isInfinite(f : Float) : Boolean = {
+        f.isInfinite()
+    }
+
+    def isRegular(f : Float) : Boolean = {
+        !isInfinite(f) && !isNaN(f) && !isDenormal(f)
+    }
+
 
     def print_bits(f: Float) = {
 
