@@ -51,10 +51,10 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
 
     //============================================================
 
-    val yl_p0       = op_b_p0.mant(0, halfBits bits)
-    val yh_p0       = (U(1, 1 bits) @@ op_b_p0.mant)(halfBits, halfBits bits)
+    val yh_p0       = (U(1, 1 bits) @@ op_b_p0.mant)(halfBits, halfBits bits) << halfBits
+    val yl_p0       = op_b_p0.mant(0, halfBits bits).resize(2*halfBits)
 
-    val yh_m_yl_p0  = (yh_p0 << halfBits) - yl_p0.resize(2*halfBits)
+    val yh_m_yl_p0  = yh_p0 - yl_p0
     val div_addr_p0 = op_b_p0.mant >> (c.mant_size-tableSizeBits)
 
     val exp_p0      = op_a_p0.exp.resize(c.exp_size+1).asSInt - op_b_p0.exp.resize(c.exp_size+1).asSInt
@@ -123,8 +123,8 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
     //============================================================
 
     val div_full_p4 = x_mul_yhyl_p4 * recip_yh2_p4
-    val divShift = div_full_p4.getWidth-(2*halfBits+2)
-    val div_p4      = div_full_p4(divShift, 2*halfBits+2 bits)
+    val divShift = div_full_p4.getWidth-(2*halfBits+1)
+    val div_p4      = div_full_p4(divShift, 2*halfBits+1 bits)
 
     //============================================================
     val p5_pipe_ena     = pipeStages >= 2
@@ -140,15 +140,15 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
     val exp_adj_p5 = SInt(c.exp_size+2 bits)
     val exp_delta_p5 = SInt(c.exp_size+2 bits)
 
-    when(div_p5(2*halfBits+1)){
+    when(div_p5(2*halfBits)){
         div_adj_p5      := (div_p5 >> 1).resize(2*halfBits-1)
         exp_delta_p5    := 1
     }
-    .elsewhen(div_p5(2*halfBits-1, 2 bits) === U"01"){
+    .elsewhen(div_p5(2*halfBits-2, 2 bits) === U"01"){
         div_adj_p5 := (div_p5 << 1).resize(2*halfBits-1)
         exp_delta_p5    := -1
     }
-    .elsewhen(div_p5(2*halfBits-2, 3 bits) === U"001"){
+    .elsewhen(div_p5(2*halfBits-3, 3 bits) === U"001"){
         div_adj_p5      := (div_p5 << 2).resize(2*halfBits-1)
         exp_delta_p5    := -2
     }
