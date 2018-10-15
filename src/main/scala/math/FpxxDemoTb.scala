@@ -117,7 +117,7 @@ object FpxxDemoTests {
                     clockDomain.waitSampling()
                 }
 
-                var sum_act = java.lang.Float.intBitsToFloat(dut.io.op_a_p_op_b.toLong.toInt)
+                var sum_act = Fp32.asFloat(dut.io.op_a_p_op_b.toLong.toInt)
 
                 if (resultMatches(op_a, op_b, sum_exp, sum_act)){
                     if (false){
