@@ -18,29 +18,34 @@ object FpxxDemoTests {
         af
     }
 
+    def printAll(opA: Float, opB: Float, expected: Float, actual: Float) {
+        printf("op A:     ")
+        Fp32.print(opA)
+        printf("\n")
+
+        printf("op B:     ")
+        Fp32.print(opB)
+        printf("\n")
+        printf("\n")
+
+        printf("Expected: ")
+        Fp32.print(expected)
+        printf("\n")
+
+        printf("Actual  : ")
+        Fp32.print(actual)
+        printf("\n")
+    }
+
     def resultMatches(opA: Float, opB: Float, expected: Float, actual: Float, verbose: Boolean = false) : Boolean = {
 
         val actualMant   : Long = Fp32.mant(actual)
         val expectedMant : Long = Fp32.mant(expected)
 
         if ((actualMant-expectedMant).abs > 15 && Fp32.isRegular(expected)){
-            printf("ERROR!\n")
-            printf("op A:     ")
-            Fp32.print_bits(opA)
-            printf("    %15e  %08x\n", opA, Fp32.asBits(opA));
-
-            printf("op B:     ")
-            Fp32.print_bits(opB)
-            printf("    %15e  %08x\n", opB, Fp32.asBits(opB));
             printf("\n")
-
-            printf("Expected: ")
-            Fp32.print_bits(expected)
-            printf("    %15e  %08x\n", expected, Fp32.asBits(expected));
-
-            printf("Actual  : ")
-            Fp32.print_bits(actual)
-            printf("    %15e  %08x\n", actual, Fp32.asBits(actual));
+            printf("ERROR!\n")
+            printAll(opA, opB, expected, actual);
 
             false
         }
@@ -51,7 +56,10 @@ object FpxxDemoTests {
     }
 
     def main(args: Array[String]): Unit = {
-        SimConfig.withWave.compile(new FpxxDemo).doSim { dut =>
+        SimConfig.
+//            withWave.
+            compile(new FpxxDemo).doSim { dut =>
+
             val oscClkPeriod = 10;  // 10 ns
 
             val clockDomain = ClockDomain(dut.io.osc_clk)
@@ -81,11 +89,17 @@ object FpxxDemoTests {
                                 (100, -99.9999f)
                             )
 
+            var resetCntr = 0
+            while(resetCntr < 100){
+                clockDomain.waitSampling()
+                resetCntr += 1
+            }
+
             pass = 0
             fail = 0
 
             i=0
-            while(i < stimuli.size || i < 100000){
+            while(i < stimuli.size || i < 1000000){
                 var inputs : (Float, Float) = (0.0f, 0.0f)
                 if (i < stimuli.size){
                     inputs = stimuli(i)
@@ -117,6 +131,9 @@ object FpxxDemoTests {
                 var sum_act = java.lang.Float.intBitsToFloat(dut.io.op_a_p_op_b.toLong.toInt)
 
                 if (resultMatches(op_a, op_b, sum_exp, sum_act)){
+                    if (false){
+                        printAll(op_a, op_b, sum_exp, sum_act);
+                    }
                     pass += 1
                 }
                 else {

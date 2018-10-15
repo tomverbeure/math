@@ -44,6 +44,11 @@ object Fp32 {
         }
     }
 
+    def print(f: Float) {
+        Fp32.print_bits(f)
+        printf("    %15e  %08x", f, Fp32.asBits(f));
+    }
+
     def randomRegular(rand: scala.util.Random) : Float = {
         var ai : Int = 0
         var af : Float = 0.0f
