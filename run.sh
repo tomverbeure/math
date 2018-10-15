@@ -1,5 +1,5 @@
 
-#sbt "test-only math.FpxxAddTester"
+sbt "test-only math.FpxxDivTester"
 #sbt "run-main math.TopVerilog"
-sbt "run-main math.FpxxDemoTests"
+#sbt "run-main math.FpxxDemoTests"
 
