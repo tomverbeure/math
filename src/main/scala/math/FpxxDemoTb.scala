@@ -7,17 +7,6 @@ import spinal.core.sim._
 
 object FpxxDemoTests {
 
-    def randomRegularFloat(rand: scala.util.Random) : Float = {
-        var ai : Int = 0
-        var af : Float = 0.0f
-        do {
-            ai = rand.nextInt
-            af = java.lang.Float.intBitsToFloat(ai)
-        } while(!Fp32.isRegular(af))
-
-        af
-    }
-
     def printAll(opA: Float, opB: Float, expected: Float, actual: Float) {
         printf("op A:     ")
         Fp32.print(opA)
@@ -105,7 +94,7 @@ object FpxxDemoTests {
                     inputs = stimuli(i)
                 }
                 else{
-                    inputs = ( randomRegularFloat(rand), randomRegularFloat(rand) )
+                    inputs = ( Fp32.randomRegular(rand), Fp32.randomRegular(rand) )
                 }
 
                 var op_a  = inputs._1
