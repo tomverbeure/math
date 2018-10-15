@@ -1,15 +1,13 @@
 [*]
 [*] GTKWave Analyzer v3.3.90 (w)1999-2018 BSI
-[*] Mon Oct 15 05:11:27 2018
+[*] Mon Oct 15 06:00:27 2018
 [*]
-[dumpfile] "/home/tom/projects/math/simWorkspace/FpxxDivDut/test.vcd"
-[dumpfile_mtime] "Mon Oct 15 05:05:02 2018"
-[dumpfile_size] 12834
+[dumpfile] "(null)"
 [savefile] "/home/tom/projects/math/wavesFpxxDiv.gtkw"
-[timestart] 453
+[timestart] 36586
 [size] 2519 1069
-[pos] -1 -2
-*-6.367184 1245 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] -1 -1
+*-5.367184 36954 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [treeopen] TOP.FpxxDivDut.
 [sst_width] 225
@@ -68,11 +66,10 @@ TOP.FpxxDivDut.fp_op.recip_yh2_p1[25:0]
 TOP.FpxxDivDut.fp_op.recip_shift_p1[1:0]
 @200
 -
-@420
+@24
 TOP.FpxxDivDut.fp_op.exp_full_p1[9:0]
 @200
 -
-@201
 -Stage P2
 @22
 TOP.FpxxDivDut.fp_op.mant_a_full_p2[23:0]
@@ -84,11 +81,25 @@ TOP.FpxxDivDut.fp_op.x_mul_yhyl_full_p2[47:0]
 TOP.FpxxDivDut.fp_op.x_mul_yhyl_p2[26:0]
 @200
 -
+-Stage P4
+@22
+TOP.FpxxDivDut.fp_op.x_mul_yhyl_p4[26:0]
+TOP.FpxxDivDut.fp_op.recip_yh2_p4[25:0]
+TOP.FpxxDivDut.fp_op.div_full_p4[52:0]
+@200
+-
+-Stage P5
+@22
+TOP.FpxxDivDut.fp_op.div_adj_p5[22:0]
+@200
+-
 -Stage P6
 @28
 TOP.FpxxDivDut.fp_op.op_a_zero_p6
 TOP.FpxxDivDut.fp_op.op_b_zero_p6
 TOP.FpxxDivDut.fp_op.sign_final_p6
+@25
+TOP.FpxxDivDut.fp_op.exp_adj_p6[9:0]
 @22
 TOP.FpxxDivDut.fp_op.exp_final_p6[7:0]
 TOP.FpxxDivDut.fp_op.div_final_p6[22:0]
