@@ -179,7 +179,7 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
         exp_final_p6.setAll
         div_final_p6  := (c.mant_size-1 -> True, default -> False)
     }
-    .elsewhen(exp_adj_p6 > ((1<<c.exp_size)-1) || op_b_zero_p6){
+    .elsewhen(exp_adj_p6 >= ((1<<c.exp_size)-1) || op_b_zero_p6){
         // Infinity
         sign_final_p6 := sign_p6
         exp_final_p6.setAll
