@@ -41,7 +41,7 @@ class FpxxDivTester extends FunSuite {
     }
 */
 
-    test("FpxxDiv") {
+    test("FpxxDivDirected") {
 
         val config = FpxxConfig(8, 23)
 
@@ -53,8 +53,46 @@ class FpxxDivTester extends FunSuite {
 
             dut.clockDomain.forkStimulus(period = 10)
             dut.clockDomain.forkSimSpeedPrinter(0.2)
-
             dut.clockDomain.waitSampling()
+
+            val stimuli = Array[(Float, Float)](
+                                (0,0), (0,1), (1,0),
+                                (1,1), (1, -1), (-1, 1), (-1, -1),
+                                (100, 1), (-100, 1), (100, -1), (1, -100), (-1, 100), (-100, -1), (-1, -100),
+                                (100000000, 1), (1, 100000000),
+                                (100, 0.001f), (100, -0.001f),
+                                (100, -99.9999f)
+                            )
+
+            while(i < stimuli.size) {
+                val inputs = stimuli(i)
+
+                val op_a        = inputs._1
+                val op_b        = inputs._2
+                val result_exp  = op_a + op_b
+
+                // Convert signed int to positive long
+                var op_a_long : Long = Fp32.asBits(op_a)
+                var op_b_long : Long = Fp32.asBits(op_b)
+
+                // Apply operands
+                dut.io.op_vld #= true
+                dut.io.op_a   #= op_a_long
+                dut.io.op_b   #= op_b_long
+                clockDomain.waitSampling(1)
+                dut.io.op_vld #= false
+
+                // Wait until result appears
+                while(!dut.io.result_vld.toBoolean){
+                    clockDomain.waitSampling()
+                }
+
+                // Actual result
+                val result_act = Fp32.asFloat(dut.io.op_a_p_op_b.toLong.toInt)
+
+                clockDomain.waitSampling()
+            }
+
         }
     }
 

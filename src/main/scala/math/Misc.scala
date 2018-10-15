@@ -11,7 +11,8 @@ object Fp32 {
     def mant_mask   = (1L<<mant_bits)-1
     def bias        = 127
 
-    def asBits(f: Float) : Long = java.lang.Float.floatToIntBits(f) & 0x00000000ffffffffL
+    def asBits(f: Float) : Long  = java.lang.Float.floatToIntBits(f) & 0x00000000ffffffffL
+    def asFloat(i: Int)  : Float = java.lang.Float.intBitsToFloat(i)
 
     def sign(f : Float) = asBits(f) >> (exp_bits + mant_bits)
     def exp(f : Float)  = (asBits(f) >> mant_bits) & exp_mask
@@ -42,6 +43,18 @@ object Fp32 {
             i-=1
         }
     }
+
+    def randomRegular(rand: scala.util.Random) : Float = {
+        var ai : Int = 0
+        var af : Float = 0.0f
+        do {
+            ai = rand.nextInt
+            af = java.lang.Float.intBitsToFloat(ai)
+        } while(!Fp32.isRegular(af))
+
+        af
+    }
+
 }
 
 object Fp64 {
