@@ -106,8 +106,11 @@ object LeadingZeros {
 }
 
 object OptPipe {
-
     def apply[T <: Data](that : T, ena: Bool, pipeline : Boolean) : T = if (pipeline) RegNextWhen(that, ena) else that
-
     def apply[T <: Data](that : T, pipeline : Boolean) : T = apply(that, True, pipeline)
+}
+
+object OptPipeInit {
+    def apply[T <: Data](that : T, init: T, ena: Bool, pipeline : Boolean) : T = if (pipeline) RegNextWhen(that, ena) init(init) else that
+    def apply[T <: Data](that : T, init: T, pipeline : Boolean) : T = apply(that, init, True, pipeline)
 }

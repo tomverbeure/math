@@ -62,7 +62,7 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
 
     //============================================================
     val p1_pipe_ena = true          // Always true because ROM is pipelined as well.
-    val p1_vld      = OptPipe(p0_vld, p1_pipe_ena)
+    val p1_vld      = OptPipeInit(p0_vld, False, p1_pipe_ena)
     val yh_m_yl_p1  = OptPipe(yh_m_yl_p0, p0_vld, p1_pipe_ena)
     val mant_a_p1   = OptPipe(op_a_p0.mant, p0_vld, p1_pipe_ena)
     val exp_p1      = OptPipe(exp_p0, p0_vld, p1_pipe_ena)
@@ -78,7 +78,7 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
 
     //============================================================
     val p2_pipe_ena     = pipeStages >= 1
-    val p2_vld          = OptPipe(p1_vld, p2_pipe_ena)
+    val p2_vld          = OptPipeInit(p1_vld, False, p2_pipe_ena)
     val yh_m_yl_p2      = OptPipe(yh_m_yl_p1, p1_vld, p2_pipe_ena)
     val mant_a_p2       = OptPipe(mant_a_p1, p1_vld, p2_pipe_ena)
     val sign_p2         = OptPipe(sign_p1, p1_vld, p2_pipe_ena)
@@ -93,7 +93,7 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
 
     //============================================================
     val p3_pipe_ena     = pipeStages >= 1
-    val p3_vld          = OptPipe(p2_vld, p3_pipe_ena)
+    val p3_vld          = OptPipeInit(p2_vld, False, p3_pipe_ena)
     val sign_p3         = OptPipe(sign_p2, p2_vld, p3_pipe_ena)
     val x_mul_yhyl_p3   = OptPipe(x_mul_yhyl_p2, p2_vld, p3_pipe_ena)
     val recip_yh2_p3    = OptPipe(recip_yh2_p2, p2_vld, p3_pipe_ena)
@@ -104,7 +104,7 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
 
     //============================================================
     val p4_pipe_ena     = pipeStages >= 2
-    val p4_vld          = OptPipe(p3_vld, p4_pipe_ena)
+    val p4_vld          = OptPipeInit(p3_vld, False, p4_pipe_ena)
     val sign_p4         = OptPipe(sign_p3, p3_vld, p4_pipe_ena)
     val x_mul_yhyl_p4   = OptPipe(x_mul_yhyl_p3, p3_vld, p4_pipe_ena)
     val recip_yh2_p4    = OptPipe(recip_yh2_p3, p3_vld, p4_pipe_ena)
@@ -117,7 +117,7 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
 
     //============================================================
     val p5_pipe_ena     = pipeStages >= 2
-    val p5_vld          = OptPipe(p4_vld, p5_pipe_ena)
+    val p5_vld          = OptPipeInit(p4_vld, False, p5_pipe_ena)
     val sign_p5         = OptPipe(sign_p4, p4_vld, p5_pipe_ena)
     val div_p5          = OptPipe(div_p4, p4_vld, p5_pipe_ena)
     val exp_full_p5     = OptPipe(exp_full_p4, p4_vld, p5_pipe_ena)
@@ -148,7 +148,7 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
 
     //============================================================
     val p6_pipe_ena     = pipeStages >= 3
-    val p6_vld          = OptPipe(p5_vld, p6_pipe_ena)
+    val p6_vld          = OptPipeInit(p5_vld, False, p6_pipe_ena)
     val sign_p6         = OptPipe(sign_p5, p5_vld, p6_pipe_ena)
     val div_adj_p6      = OptPipe(div_adj_p5, p5_vld, p6_pipe_ena)
     val exp_adj_p6      = OptPipe(exp_adj_p5, p5_vld, p6_pipe_ena)
