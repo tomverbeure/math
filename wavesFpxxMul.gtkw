@@ -1,0 +1,96 @@
+[*]
+[*] GTKWave Analyzer v3.3.90 (w)1999-2018 BSI
+[*] Tue Oct 16 03:48:06 2018
+[*]
+[dumpfile] "/home/tom/projects/math/simWorkspace/FpxxMulDut/test.vcd"
+[dumpfile_mtime] "Tue Oct 16 03:40:31 2018"
+[dumpfile_size] 6054
+[savefile] "/home/tom/projects/math/wavesFpxxMul.gtkw"
+[timestart] 0
+[size] 1740 1314
+[pos] 187 -1333
+*-7.000000 570 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.FpxxMulDut.
+[sst_width] 274
+[signals_width] 259
+[sst_expanded] 1
+[sst_vpaned_height] 411
+@28
+TOP.reset
+TOP.clk
+@200
+-
+@28
+TOP.io_op_vld
+@22
+TOP.io_op_a[31:0]
+TOP.io_op_b[31:0]
+@200
+-
+-Stage P0
+@28
+TOP.FpxxMulDut.fp_op.p0_vld
+@200
+-
+@28
+TOP.FpxxMulDut.fp_op.op_a_p0_sign
+TOP.FpxxMulDut.fp_op.op_b_p0_sign
+@200
+-
+@24
+TOP.FpxxMulDut.fp_op.exp_a_p0[7:0]
+TOP.FpxxMulDut.fp_op.exp_b_p0[7:0]
+@200
+-
+@22
+TOP.FpxxMulDut.fp_op.mant_a_p0[22:0]
+TOP.FpxxMulDut.fp_op.mant_b_p0[22:0]
+@200
+-
+-Stage P1
+@28
+TOP.FpxxMulDut.fp_op.p1_vld
+@200
+-
+@24
+TOP.FpxxMulDut.fp_op.exp_a_p1[7:0]
+TOP.FpxxMulDut.fp_op.exp_b_p1[7:0]
+@200
+-
+@24
+TOP.FpxxMulDut.fp_op.exp_mul_p1[8:0]
+@200
+-
+@22
+TOP.FpxxMulDut.fp_op.mant_a_full_p1[23:0]
+TOP.FpxxMulDut.fp_op.mant_b_full_p1[23:0]
+@200
+-
+@22
+TOP.FpxxMulDut.fp_op.mant_mul_p1[23:0]
+@200
+-
+-Stage P2
+@28
+TOP.FpxxMulDut.fp_op.p2_vld
+@201
+-
+@22
+TOP.FpxxMulDut.fp_op.exp_mul_p2[8:0]
+TOP.FpxxMulDut.fp_op.exp_mul_adj_p2[8:0]
+TOP.FpxxMulDut.fp_op.exp_final_p2[7:0]
+@200
+-
+@22
+TOP.FpxxMulDut.fp_op.mant_mul_p2[23:0]
+TOP.FpxxMulDut.fp_op.mant_mul_adj_p2[23:0]
+TOP.FpxxMulDut.fp_op.mant_final_p2[22:0]
+@200
+-
+@28
+TOP.io_result_vld
+@22
+TOP.io_result[31:0]
+[pattern_trace] 1
+[pattern_trace] 0

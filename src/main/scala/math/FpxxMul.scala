@@ -43,15 +43,15 @@ class FpxxMul(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 
     //============================================================
 
-    val exp_mul_p1 = SInt(c.exp_size+1 bits)
+    val exp_mul_p1 = SInt(c.exp_size+2 bits)
 
-    exp_mul_p1 := exp_a_p1.resize(c.exp_size+1).asSInt + exp_b_p1.resize(c.exp_size+1).asSInt + S(1 - c.bias, c.exp_size+1 bits)
+    exp_mul_p1 := exp_a_p1.resize(c.exp_size+2).asSInt + exp_b_p1.resize(c.exp_size+2).asSInt - S(c.bias, c.exp_size+2 bits)
 
     val mant_a_full_p1 = U(1, 1 bits) @@ mant_a_p1
     val mant_b_full_p1 = U(1, 1 bits) @@ mant_b_p1
 
-    val mant_mul_p1 = UInt(c.mant_size+1 bits)
-    mant_mul_p1 := (mant_a_full_p1 * mant_b_full_p1) >> (c.mant_size+1)
+    val mant_mul_p1 = UInt(c.mant_size+2 bits)
+    mant_mul_p1 := (mant_a_full_p1 * mant_b_full_p1) >> c.mant_size
 
     //============================================================
     val p2_pipe_ena = pipeStages >= 1
@@ -62,20 +62,25 @@ class FpxxMul(c: FpxxConfig, pipeStages: Int = 1) extends Component {
     val mant_mul_p2     = OptPipe(mant_mul_p1,     p1_vld, p2_pipe_ena)
     //============================================================
 
-    val exp_mul_adj_p2  = SInt(c.exp_size+1 bits)
+    val exp_mul_adj_p2  = SInt(c.exp_size+2 bits)
     val mant_mul_adj_p2 = UInt(c.mant_size+1 bits)
 
-    mant_mul_adj_p2 := mant_mul_p2 >> mant_mul_p2.msb.asUInt
-    exp_mul_adj_p2  := exp_mul_p2 + mant_mul_p2.msb.asSInt
+    mant_mul_adj_p2 := (mant_mul_p2 |>> mant_mul_p2.msb.asUInt).resize(c.mant_size+1)
+    exp_mul_adj_p2  := exp_mul_p2 + mant_mul_p2.msb.asUInt.resize(2).asSInt
 
     val sign_final_p2 = Bool
     val exp_final_p2  = UInt(c.exp_size bits)
     val mant_final_p2 = UInt(c.mant_size bits)
 
-    when(op_is_zero_p2 || exp_mul_p2 < 0){
+    when(op_is_zero_p2 || exp_mul_adj_p2 <= 0){
         sign_final_p2   := False
-        exp_final_p2    := 0
-        mant_final_p2   := 0
+        exp_final_p2.clearAll
+        mant_final_p2.clearAll
+    }
+    .elsewhen(exp_mul_adj_p2 >= 255){
+        sign_final_p2   := sign_mul_p2
+        exp_final_p2.setAll
+        mant_final_p2.clearAll
     }
     .otherwise{
         sign_final_p2   := sign_mul_p2
