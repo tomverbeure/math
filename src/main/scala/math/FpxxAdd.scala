@@ -119,7 +119,7 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
         mant_a_opt_inv_p2 := mant_a_adj_p2 @@ False
         mant_b_opt_inv_p2 := mant_b_adj_p2 @@ False
     }
-    .elsewhen(mant_a_adj_p2 > mant_b_adj_p2){
+    .elsewhen(mant_a_adj_p2 >= mant_b_adj_p2){
         sign_add_p2       := sign_a_p2
         mant_a_opt_inv_p2 :=  mant_a_adj_p2 @@ True
         mant_b_opt_inv_p2 := ~mant_b_adj_p2 @@ True
