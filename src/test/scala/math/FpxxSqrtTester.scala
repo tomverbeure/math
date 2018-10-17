@@ -48,18 +48,21 @@ class FpxxSqrtTester extends FunSuite {
         val actualMant   : Long = Fp32.mant(actual)
         val expectedMant : Long = Fp32.mant(expected)
 
+        val mantDiff = (actualMant - expectedMant).abs
+
         var matches = false
         matches |= Fp32.isDenormal(expected) && Fp32.isZero(actual)
         matches |= Fp32.isInfinite(expected) && Fp32.isInfinite(actual)
         matches |= Fp32.isNaN(expected)      && Fp32.isNaN(actual)
         matches |= (Fp32.exp(expected)  == Fp32.exp(actual))  &&
                    (Fp32.sign(expected) == Fp32.sign(actual)) &&
-                   ((Fp32.mant(expected) - Fp32.mant(actual)).abs < 4)
+                   (mantDiff < (1<<(24/2+2)))
 
         if (!matches){
             printf("\n")
             printf("ERROR!\n")
-            printAll(op, expected, actual);
+            printAll(op, expected, actual)
+            printf("Mant diff: %d\n", mantDiff)
 
             false
         }
@@ -77,7 +80,7 @@ class FpxxSqrtTester extends FunSuite {
         val config = FpxxConfig(8, 23)
 
         var compiled = SimConfig
-            .withWave
+//            .withWave
             .compile(new FpxxSqrtTester.FpxxSqrtDut(config))
 
         compiled.doSim { dut =>

@@ -32,6 +32,8 @@ class FpxxSqrt(c: FpxxConfig, sqrtConfig: FpxxSqrtConfig = null) extends Compone
         val round = (fout_mant >> (Fp64.mant_bits-lutMantBits+1)) & 1
         fout_mant = (fout_mant >> (Fp64.mant_bits-lutMantBits)) + round
 
+        // printf("Sqrt table: %d: %10f -> %10f : %08x\n", i, fin, fout, fout_mant)
+
         U( (fout_mant << 2) | (shift & 0x3), (lutMantBits+2) bits) 
     }
 
@@ -50,17 +52,20 @@ class FpxxSqrt(c: FpxxConfig, sqrtConfig: FpxxSqrtConfig = null) extends Compone
 
     //============================================================
 
+    val op_zero_p0 = (op_p0.exp === 0)
+
     val exp_p0 = SInt(c.exp_size+1 bits)
     exp_p0 := op_p0.exp.resize(c.exp_size+1).asSInt - c.bias
 
     val gt_1_p0 = !(exp_p0).lsb
 
     val sqrt_addr_p0 = UInt(tableSizeBits bits)
-    sqrt_addr_p0 := (((U(1,1 bits) & op_p0.mant) << gt_1_p0.asUInt) >> (c.mant_size+2-tableSizeBits)) - (1<<(tableSizeBits-2))
+    sqrt_addr_p0 := (((U(1,1 bits) @@ op_p0.mant) << gt_1_p0.asUInt) >> (c.mant_size+2-tableSizeBits)) - (1<<(tableSizeBits-2))
 
     //============================================================
     val p1_pipe_ena = pipeStages >= 0
     val p1_vld      = OptPipeInit(p0_vld, False, p1_pipe_ena)
+    val op_zero_p1  = OptPipe(op_zero_p0,   p0_vld, p1_pipe_ena)
     val sign_p1     = OptPipe(op_p0.sign,   p0_vld, p1_pipe_ena)
     val exp_p1      = OptPipe(exp_p0,       p0_vld, p1_pipe_ena)
 
@@ -83,7 +88,7 @@ class FpxxSqrt(c: FpxxConfig, sqrtConfig: FpxxSqrtConfig = null) extends Compone
         exp_final_p1.setAll
         mant_final_p1   := (c.mant_size-1 -> True, default -> False)
     }
-    .elsewhen(exp_adj_p1 <= 0){
+    .elsewhen(exp_adj_p1 <= 0 || op_zero_p1){
         // Underflow
         sign_final_p1   := False
         exp_final_p1.clearAll
