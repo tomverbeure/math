@@ -1,0 +1,85 @@
+[*]
+[*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
+[*] Wed Oct 17 04:02:01 2018
+[*]
+[dumpfile] "/home/ubuntu/projects/math/simWorkspace/FpxxRSqrtDut/test.vcd"
+[dumpfile_mtime] "Wed Oct 17 03:58:29 2018"
+[dumpfile_size] 3083
+[savefile] "/home/ubuntu/projects/math/wavesFpxxRSqrt.gtkw"
+[timestart] 0
+[size] 1487 844
+[pos] 243 125
+*-6.364997 245 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.FpxxRSqrtDut.
+[sst_width] 210
+[signals_width] 282
+[sst_expanded] 1
+[sst_vpaned_height] 240
+@28
+TOP.FpxxRSqrtDut.fp_op.clk
+@200
+-
+@28
+TOP.FpxxRSqrtDut.fp_op.p0_vld
+TOP.FpxxRSqrtDut.fp_op.op_p0_sign
+@24
+TOP.FpxxRSqrtDut.fp_op.op_p0_exp[7:0]
+@c00022
+TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+@28
+(0)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(1)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(2)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(3)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(4)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(5)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(6)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(7)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(8)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(9)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(10)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(11)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(12)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(13)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(14)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(15)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(16)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(17)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(18)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(19)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(20)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(21)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+(22)TOP.FpxxRSqrtDut.fp_op.op_p0_mant[22:0]
+@1401200
+-group_end
+@200
+-
+@420
+TOP.FpxxRSqrtDut.fp_op.exp_p0[8:0]
+@28
+TOP.FpxxRSqrtDut.fp_op.gt_1_p0
+TOP.FpxxRSqrtDut.fp_op.op_zero_p0
+@22
+TOP.FpxxRSqrtDut.fp_op.rsqrt_addr_p0[10:0]
+@200
+-
+@28
+TOP.FpxxRSqrtDut.fp_op.p1_vld
+@22
+TOP.FpxxRSqrtDut.fp_op.rsqrt_val_p1[24:0]
+@200
+-
+@28
+TOP.FpxxRSqrtDut.fp_op.rsqrt_shift_p1[1:0]
+@22
+TOP.FpxxRSqrtDut.fp_op.rsqrt_mant_p1[22:0]
+@200
+-
+@420
+TOP.FpxxRSqrtDut.fp_op.exp_p1[8:0]
+TOP.FpxxRSqrtDut.fp_op.exp_adj_p1[8:0]
+@25
+TOP.FpxxRSqrtDut.fp_op.exp_final_p1[7:0]
+[pattern_trace] 1
+[pattern_trace] 0
