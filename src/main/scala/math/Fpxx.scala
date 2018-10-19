@@ -26,6 +26,14 @@ case class Fpxx(c: FpxxConfig) extends Bundle {
         exp === 0
     }
 
+    def is_nan(): Bool = {
+        exp.andR && mant.orR
+    }
+
+    def is_infinite(): Bool = {
+        exp.andR && !mant.orR
+    }
+
     def set_zero() = {
         sign    := False
         exp     := 0

@@ -3,11 +3,7 @@ package math
 
 import spinal.core._
 
-// Right now, doesn't support: overflows, denormals, NaN. 
-// A denormal gets replaced by zero, so that's ok.
-// But an overflow condition results in undefined behavior and a Nan as input gets
-// treated as some real number. This will need to be fixed eventually.
-// Also: no rounding at all. Stuff just gets truncated.
+// Doesn't support: denormals, rounding, and correct signed zeros
 
 class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 
@@ -26,7 +22,13 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 
     val op_a_is_zero_p0 = op_a_p0.is_zero()
     val op_b_is_zero_p0 = op_b_p0.is_zero()
-    val op_is_zero_p0   = op_a_is_zero_p0 || op_b_is_zero_p0
+
+    val op_a_is_inf_p0 = op_a_p0.is_infinite()
+    val op_b_is_inf_p0 = op_b_p0.is_infinite()
+
+    val op_is_zero_p0       = op_a_is_zero_p0 || op_b_is_zero_p0
+    val op_is_nan_p0        = op_a_p0.is_nan() || op_b_p0.is_nan() || (op_a_is_inf_p0 && op_b_is_inf_p0 && op_a_p0.sign =/= op_b_p0.sign)
+    val op_is_inf_p0        = (op_a_is_inf_p0 || op_b_is_inf_p0)
 
     val mant_a_p0 = op_a_p0.full_mant()
     val mant_b_p0 = op_b_p0.full_mant()
@@ -79,6 +81,8 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 
     val p1_vld          = OptPipeInit(p0_vld, False, p1_pipe_ena)
     val op_is_zero_p1   = OptPipe(op_is_zero_p0,   p0_vld, p1_pipe_ena)
+    val op_is_nan_p1    = OptPipe(op_is_nan_p0,    p0_vld, p1_pipe_ena)
+    val op_is_inf_p1    = OptPipe(op_is_inf_p0,    p0_vld, p1_pipe_ena)
     val sign_a_p1       = OptPipe(sign_a_swap_p0,  p0_vld, p1_pipe_ena)
     val sign_b_p1       = OptPipe(sign_b_swap_p0,  p0_vld, p1_pipe_ena)
     val exp_add_p1      = OptPipe(exp_add_p0,      p0_vld, p1_pipe_ena)
@@ -101,6 +105,8 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 
     val p2_vld        = OptPipeInit(p1_vld, False, p2_pipe_ena)
     val op_is_zero_p2 = OptPipe(op_is_zero_p1, p1_vld, p2_pipe_ena)
+    val op_is_nan_p2  = OptPipe(op_is_nan_p1,  p1_vld, p2_pipe_ena)
+    val op_is_inf_p2  = OptPipe(op_is_inf_p1,  p1_vld, p2_pipe_ena)
     val sign_a_p2     = OptPipe(sign_a_p1,     p1_vld, p2_pipe_ena)
     val sign_b_p2     = OptPipe(sign_b_p1,     p1_vld, p2_pipe_ena)
     val exp_add_p2    = OptPipe(exp_add_p1,    p1_vld, p2_pipe_ena)
@@ -136,6 +142,8 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 
     val p3_vld            = OptPipeInit(p2_vld, False, p3_pipe_ena)
     val op_is_zero_p3     = OptPipe(op_is_zero_p2,     p2_vld, p3_pipe_ena)
+    val op_is_nan_p3      = OptPipe(op_is_nan_p2,      p2_vld, p3_pipe_ena)
+    val op_is_inf_p3      = OptPipe(op_is_inf_p2,      p2_vld, p3_pipe_ena)
     val sign_add_p3       = OptPipe(sign_add_p2,       p2_vld, p3_pipe_ena)
     val exp_add_p3        = OptPipe(exp_add_p2,        p2_vld, p3_pipe_ena)
     val mant_a_opt_inv_p3 = OptPipe(mant_a_opt_inv_p2, p2_vld, p3_pipe_ena)
@@ -151,6 +159,8 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 
     val p4_vld        = OptPipeInit(p3_vld, False, p4_pipe_ena)
     val op_is_zero_p4 = OptPipe(op_is_zero_p3, p3_vld, p4_pipe_ena)
+    val op_is_nan_p4  = OptPipe(op_is_nan_p3,  p3_vld, p4_pipe_ena)
+    val op_is_inf_p4  = OptPipe(op_is_inf_p3,  p3_vld, p4_pipe_ena)
     val sign_add_p4   = OptPipe(sign_add_p3,   p3_vld, p4_pipe_ena)
     val exp_add_p4    = OptPipe(exp_add_p3,    p3_vld, p4_pipe_ena)
     val mant_add_p4   = OptPipe(mant_add_p3,   p3_vld, p4_pipe_ena)
@@ -184,6 +194,8 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
     val p5_pipe_ena = pipeStages >= 5
 
     val p5_vld        = OptPipeInit(p4_vld, False, p4_pipe_ena)
+    val op_is_nan_p5  = OptPipe(op_is_nan_p4,    p4_vld, p5_pipe_ena)
+    val op_is_inf_p5  = OptPipe(op_is_inf_p4,    p4_vld, p5_pipe_ena)
     val lz_p5         = OptPipe(lz_p4,           p4_vld, p5_pipe_ena)
     val sign_add_p5   = OptPipe(sign_add_p4,     p4_vld, p5_pipe_ena)
     val exp_add_p5    = OptPipe(exp_add_adj_p4,  p4_vld, p5_pipe_ena)
@@ -191,14 +203,28 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 
     //============================================================
 
-    val mant_final_p5  = UInt(c.mant_size+1 bits)
+    val sign_final_p5  = Bool
     val exp_final_p5   = UInt(c.exp_size bits)
+    val mant_final_p5  = UInt(c.mant_size+1 bits)
 
-    mant_final_p5  := mant_add_p5 |<< lz_p5
-    exp_final_p5   := (lz_p5 < c.mant_size+1) ? (exp_add_p5 - lz_p5) | 0
+    when(op_is_nan_p5){
+        sign_final_p5   := False
+        exp_final_p5.setAll
+        mant_final_p5   := (c.mant_size-1 -> True, default -> False)
+    }
+    .elsewhen(op_is_inf_p5 || exp_add_p5.andR){
+        sign_final_p5   := sign_add_p5
+        exp_final_p5.setAll
+        mant_final_p5.clearAll
+    }
+    .otherwise{
+        sign_final_p5   := sign_add_p5
+        exp_final_p5    := (lz_p5 < c.mant_size+1) ? (exp_add_p5 - lz_p5) | 0
+        mant_final_p5   := mant_add_p5 |<< lz_p5
+    }
 
     io.result_vld   := p5_vld
-    io.result.sign  := sign_add_p5
+    io.result.sign  := sign_final_p5
     io.result.exp   := exp_final_p5
     io.result.mant  := mant_final_p5.resize(c.mant_size)
 }
