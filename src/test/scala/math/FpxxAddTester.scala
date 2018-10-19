@@ -38,6 +38,10 @@ class FpxxAddTester extends FunSuite {
         val actualMant   : Long = Fp32.mant(actual)
         val expectedMant : Long = Fp32.mant(expected)
 
+        val lz = scala.math.max(scala.math.max(Fp32.exp(opA),Fp32.exp(opB)) - Fp32.exp(expected), 0)
+        val max_mant_err = 1<<lz
+        val mant_err = (Fp32.mant(expected) - Fp32.mant(actual)).abs
+
         var matches = false
         matches |= Fp32.isDenormal(expected) && Fp32.isZero(actual)
         matches |= Fp32.isInfinite(expected) && Fp32.isInfinite(actual)
@@ -45,12 +49,13 @@ class FpxxAddTester extends FunSuite {
         matches |= Fp32.isZero(expected)     && Fp32.isZero(actual)
         matches |= (Fp32.exp(expected)  == Fp32.exp(actual))  &&
                    (Fp32.sign(expected) == Fp32.sign(actual)) &&
-                   ((Fp32.mant(expected) - Fp32.mant(actual)).abs < 4)
+                   (mant_err <= max_mant_err)
 
         if (!matches){
             printf("\n")
             printf("ERROR!\n")
             printAll(opA, opB, expected, actual);
+            printf("mant_err: %d, max_mant_err: %d, lz: %d\n", mant_err, max_mant_err, lz);
 
             false
         }
@@ -69,6 +74,7 @@ class FpxxAddTester extends FunSuite {
 
         var compiled = SimConfig
 //            .withWave
+            .allOptimisation
             .compile(new FpxxAddTester.FpxxAddDut(config))
 
         compiled.doSim { dut =>
