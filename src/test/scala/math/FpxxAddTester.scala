@@ -89,7 +89,8 @@ class FpxxAddTester extends FunSuite {
                                 (Float.NaN, Float.NaN), (Float.NaN, 1), (Float.NaN, Float.PositiveInfinity), (Float.NaN, Float.NegativeInfinity),
                                 (Float.PositiveInfinity, 1), (Float.NegativeInfinity, 1),
                                 (Float.PositiveInfinity, Float.PositiveInfinity), (Float.PositiveInfinity, Float.NegativeInfinity), (Float.NegativeInfinity, Float.NegativeInfinity),
-                                (Float.MaxValue, 1), (Float.MaxValue, Float.MaxValue)
+                                (Float.MaxValue, 1), (Float.MaxValue, Float.MaxValue),
+                                (-Float.MaxValue, 1), (-Float.MaxValue, -Float.MaxValue)
                             )
 
             var rand = new scala.util.Random(0)
