@@ -80,7 +80,7 @@ class FpxxAddTester extends FunSuite {
         }
     }
 
-    test("FpxxDiv") {
+    test("FpxxAdd") {
 
         val config = FpxxConfig(8, 23)
 
