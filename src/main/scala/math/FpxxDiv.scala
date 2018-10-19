@@ -12,6 +12,8 @@ case class FpxxDivConfig(
 
 class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component {
 
+    assert((c.mant_size&1)==1, "FpxxDiv: mantissa must be odd")
+
     def pipeStages      = if (divConfig == null) 0 else divConfig.pipeStages
     def halfBits        = (c.mant_size+1)/2
     def lutMantBits     = if (divConfig == null || divConfig.lutMantBits < 0) 2*halfBits+1 else divConfig.lutMantBits
