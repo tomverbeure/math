@@ -32,7 +32,7 @@ class FpxxRSqrt(c: FpxxConfig, rsqrtConfig: FpxxRSqrtConfig = null) extends Comp
         val round = (fout_mant >> (Fp64.mant_bits-lutMantBits+1)) & 1
         fout_mant = (fout_mant >> (Fp64.mant_bits-lutMantBits)) + round
 
-        printf("RSqrt table: %d: %10f -> %10f : %08x, %d, %d\n", i, fin, fout, fout_mant, (fin_exp-fout_exp), shift)
+        // printf("RSqrt table: %d: %10f -> %10f : %08x, %d, %d\n", i, fin, fout, fout_mant, (fin_exp-fout_exp), shift)
 
         U( (fout_mant << 2) | (shift & 0x3), (lutMantBits+2) bits) 
     }
