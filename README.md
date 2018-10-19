@@ -8,13 +8,13 @@ mantissa.
 
 #### Table of Contents
 
-- [Fpxx General](#Fpxx)
-- [FpxxAdd](#FpxxAdd)
-- [FpxxMul](#FpxxMul)
-- [FpxxDiv](#FpxxDiv)
-- [FpxxSqrt](#FpxxSqrt)
-- [FpxxRSqrt](#FpxxRSqrt)
-- [Math Related Literature](#Math Related Literature)
+- [Fpxx General](#fpxx)
+- [FpxxAdd](#fpxxadd)
+- [FpxxMul](#fpxxmul)
+- [FpxxDiv](#fpxxdiv)
+- [FpxxSqrt](#fpxxsqrt)
+- [FpxxRSqrt](#fpxxrsqrt)
+- [Math Related Literature](#math-related-literature)
 
 # Fpxx
 
