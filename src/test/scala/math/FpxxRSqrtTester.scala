@@ -3,6 +3,8 @@ package math
 
 import org.scalatest.FunSuite
 
+import math.FpxxTesterSupport._
+
 import spinal.sim._
 import spinal.core._
 import spinal.core.sim._
@@ -28,20 +30,6 @@ object FpxxRSqrtTester {
 }
 
 class FpxxRSqrtTester extends FunSuite {
-
-    def printAll(op: Float, expected: Float, actual: Float) {
-        printf("op:     ")
-        Fp32.print(op)
-        printf("\n")
-
-        printf("Expected: ")
-        Fp32.print(expected)
-        printf("\n")
-
-        printf("Actual  : ")
-        Fp32.print(actual)
-        printf("\n")
-    }
 
     def resultMatches(op: Float, expected: Float, actual: Float, verbose: Boolean = false) : Boolean = {
 
