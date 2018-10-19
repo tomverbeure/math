@@ -193,8 +193,7 @@ Non-goals:
 
 * [...](https://pdfs.semanticscholar.org/1c3c/569f613024e8164450daf05a01163c99f72c.pdf)
 
-
-# Leading Zero Counter (LZC) and Leading Zero Anticipor (LZA)
+## Leading Zero Counter (LZC) and Leading Zero Anticipor (LZA)
 
 * [Modular Design of Fast Leading Zeros Counting Circuit](https://www.degruyter.com/downloadpdf/j/jee.2015.66.issue-6/jee-2015-0054/jee-2015-0054.pdf)
 
@@ -207,7 +206,9 @@ Non-goals:
 
 * [Leading-Zero Anticipatory Logic for High-Speed Floating Point Addition](http://soc.knu.ac.kr/video_lectures/11_7.pdf) (1995)
 
-* [Leading Zero Anticipation and Detection - A Comparison of Methods](https://www.csee.umbc.edu/~phatak/645/supl/lza/lza-survey-arith01.pdf) (2001) * [Analysis and Implementation of a Novel Leading Zero Anticipation Algorithm for Floating Point Arithmetic Units](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.667.533&rep=rep1&type=pdf) (2001)
+* [Leading Zero Anticipation and Detection - A Comparison of Methods](https://www.csee.umbc.edu/~phatak/645/supl/lza/lza-survey-arith01.pdf) (2001) 
+
+* [Analysis and Implementation of a Novel Leading Zero Anticipation Algorithm for Floating Point Arithmetic Units](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.667.533&rep=rep1&type=pdf) (2001)
 
 * [Hybrid LZA: A Near Optimal Implementation of the Leading Zero Anticipator](https://lap.epfl.ch/files/content/sites/lap/files/shared/publications/VermaJan09_HybridLzaANearOptimalImplementationOfTheLeadingZeroAnticipator_ASPDAC09.pdf) (2009)
 
