@@ -64,6 +64,7 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
 
     val op_a_zero_p0 = op_a_p0.is_zero()
     val op_b_zero_p0 = op_b_p0.is_zero()
+    val op_nan_p0    = op_a_p0.is_nan() || op_b_p0.is_nan()
 
     //============================================================
     val p1_pipe_ena     = true          // Always true because ROM is pipelined as well.
@@ -74,6 +75,7 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
     val sign_p1         = OptPipe(sign_p0,      p0_vld, p1_pipe_ena)
     val op_a_zero_p1    = OptPipe(op_a_zero_p0, p0_vld, p1_pipe_ena)
     val op_b_zero_p1    = OptPipe(op_b_zero_p0, p0_vld, p1_pipe_ena)
+    val op_nan_p1       = OptPipe(op_nan_p0,    p0_vld, p1_pipe_ena)
 
     val div_val_p1  = div_table.readSync(div_addr_p0, p0_vld)
     //============================================================
@@ -93,6 +95,7 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
     val exp_full_p2     = OptPipe(exp_full_p1,  p1_vld, p2_pipe_ena)
     val op_a_zero_p2    = OptPipe(op_a_zero_p1, p1_vld, p2_pipe_ena)
     val op_b_zero_p2    = OptPipe(op_b_zero_p1, p1_vld, p2_pipe_ena)
+    val op_nan_p2       = OptPipe(op_nan_p1,    p1_vld, p2_pipe_ena)
     //============================================================
 
     val mant_a_full_p2  = U(1, 1 bits) @@ mant_a_p2
@@ -109,6 +112,7 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
     val exp_full_p3     = OptPipe(exp_full_p2,   p2_vld, p3_pipe_ena)
     val op_a_zero_p3    = OptPipe(op_a_zero_p2,  p2_vld, p3_pipe_ena)
     val op_b_zero_p3    = OptPipe(op_b_zero_p2,  p2_vld, p3_pipe_ena)
+    val op_nan_p3       = OptPipe(op_nan_p2,     p2_vld, p3_pipe_ena)
     //============================================================
 
     // Empty stage: useful for routing from output of one multiplier to input of next multiplier
@@ -122,6 +126,7 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
     val exp_full_p4     = OptPipe(exp_full_p3,   p3_vld, p4_pipe_ena)
     val op_a_zero_p4    = OptPipe(op_a_zero_p3,  p3_vld, p4_pipe_ena)
     val op_b_zero_p4    = OptPipe(op_b_zero_p3,  p3_vld, p4_pipe_ena)
+    val op_nan_p4       = OptPipe(op_nan_p3,     p3_vld, p4_pipe_ena)
     //============================================================
 
     val div_full_p4 = x_mul_yhyl_p4 * recip_yh2_p4
@@ -136,6 +141,7 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
     val exp_full_p5     = OptPipe(exp_full_p4,   p4_vld, p5_pipe_ena)
     val op_a_zero_p5    = OptPipe(op_a_zero_p4,  p4_vld, p5_pipe_ena)
     val op_b_zero_p5    = OptPipe(op_b_zero_p4,  p4_vld, p5_pipe_ena)
+    val op_nan_p5       = OptPipe(op_nan_p4,     p4_vld, p5_pipe_ena)
     //============================================================
 
     val div_adj_p5 = UInt(c.mant_size bits)
@@ -169,13 +175,14 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
     val exp_adj_p6      = OptPipe(exp_adj_p5,    p5_vld, p6_pipe_ena)
     val op_a_zero_p6    = OptPipe(op_a_zero_p5,  p5_vld, p6_pipe_ena)
     val op_b_zero_p6    = OptPipe(op_b_zero_p5,  p5_vld, p6_pipe_ena)
+    val op_nan_p6       = OptPipe(op_nan_p5,     p5_vld, p6_pipe_ena)
     //============================================================
 
     val sign_final_p6 = Bool
     val exp_final_p6  = UInt(c.exp_size bits)
     val div_final_p6  = UInt(c.mant_size bits)
 
-    when(op_a_zero_p6 && op_b_zero_p6){
+    when((op_a_zero_p6 && op_b_zero_p6) || op_nan_p6){
         // 0/0 -> Nan
         sign_final_p6 := sign_p6
         exp_final_p6.setAll
