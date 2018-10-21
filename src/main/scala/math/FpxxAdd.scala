@@ -208,7 +208,7 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
     val mant_final_p5  = UInt(c.mant_size+1 bits)
 
     val exp_add_m_lz = SInt(c.exp_size+1 bits)
-    exp_add_m_lz:= exp_add_p5.resize(c.exp_size+1).asSInt - lz_p5.resize(c.exp_size+1).asSInt
+    exp_add_m_lz    := exp_add_p5.resize(c.exp_size+1).asSInt - lz_p5.resize(c.exp_size+1).asSInt
     val exp_eq_lz   = exp_add_p5 === lz_p5
 
     when(op_is_nan_p5){

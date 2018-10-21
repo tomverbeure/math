@@ -18,9 +18,10 @@ class FpxxMul(c: FpxxConfig, pipeStages: Int = 1) extends Component {
     val op_a_p0 = io.op_a
     val op_b_p0 = io.op_b
 
+    val op_is_nan_p0    = op_a_p0.is_nan() || op_b_p0.is_nan()
     val op_a_is_zero_p0 = op_a_p0.is_zero()
     val op_b_is_zero_p0 = op_b_p0.is_zero()
-    val op_is_zero_p0   = op_a_is_zero_p0 || op_b_is_zero_p0
+    val op_is_zero_p0   = (op_a_is_zero_p0 || op_b_is_zero_p0) && !op_is_nan_p0
 
     val exp_a_p0 = op_a_p0.exp
     val exp_b_p0 = op_b_p0.exp
@@ -35,6 +36,7 @@ class FpxxMul(c: FpxxConfig, pipeStages: Int = 1) extends Component {
     val p1_pipe_ena = pipeStages >= 2
     val p1_vld          = OptPipeInit(p0_vld, False, p1_pipe_ena)
     val op_is_zero_p1   = OptPipe(op_is_zero_p0,   p0_vld, p1_pipe_ena)
+    val op_is_nan_p1    = OptPipe(op_is_nan_p0,    p0_vld, p1_pipe_ena)
     val sign_mul_p1     = OptPipe(sign_mul_p0,     p0_vld, p1_pipe_ena)
     val exp_a_p1        = OptPipe(exp_a_p0,        p0_vld, p1_pipe_ena)
     val exp_b_p1        = OptPipe(exp_b_p0,        p0_vld, p1_pipe_ena)
@@ -57,6 +59,7 @@ class FpxxMul(c: FpxxConfig, pipeStages: Int = 1) extends Component {
     val p2_pipe_ena = pipeStages >= 1
     val p2_vld          = OptPipeInit(p1_vld, False, p2_pipe_ena)
     val op_is_zero_p2   = OptPipe(op_is_zero_p1,   p1_vld, p2_pipe_ena)
+    val op_is_nan_p2    = OptPipe(op_is_nan_p1,    p1_vld, p2_pipe_ena)
     val sign_mul_p2     = OptPipe(sign_mul_p1,     p1_vld, p2_pipe_ena)
     val exp_mul_p2      = OptPipe(exp_mul_p1,      p1_vld, p2_pipe_ena)
     val mant_mul_p2     = OptPipe(mant_mul_p1,     p1_vld, p2_pipe_ena)
@@ -72,7 +75,12 @@ class FpxxMul(c: FpxxConfig, pipeStages: Int = 1) extends Component {
     val exp_final_p2  = UInt(c.exp_size bits)
     val mant_final_p2 = UInt(c.mant_size bits)
 
-    when(op_is_zero_p2 || exp_mul_adj_p2 <= 0){
+    when(op_is_nan_p2){
+        sign_final_p2   := False
+        exp_final_p2.setAll
+        mant_final_p2   := (c.mant_size-1 -> True, default -> False)
+    }
+    .elsewhen(op_is_zero_p2 || exp_mul_adj_p2 <= 0){
         sign_final_p2   := False
         exp_final_p2.clearAll
         mant_final_p2.clearAll

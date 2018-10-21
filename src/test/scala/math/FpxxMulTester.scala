@@ -79,15 +79,7 @@ class FpxxMulTester extends FunSuite {
             dut.io.op_vld #= false
             dut.clockDomain.waitSampling()
 
-            val stimuli = Array[(Float, Float)](
-                                (0,0), (0,1), (1,0),
-                                (0,-0), (0,-1), (-1,0),
-                                (1,1), (1, -1), (-1, 1), (-1, -1),
-                                (100, 1), (-100, 1), (100, -1), (1, -100), (-1, 100), (-100, -1), (-1, -100),
-                                (100000000, 1), (1, 100000000),
-                                (100, 0.001f), (100, -0.001f),
-                                (100, -99.9999f)
-                            )
+            val stimuli = FpxxTesterSupport.directedStimuli
 
             var rand = new scala.util.Random(0)
             var i = 0
