@@ -64,7 +64,9 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
 
     val op_a_zero_p0 = op_a_p0.is_zero()
     val op_b_zero_p0 = op_b_p0.is_zero()
-    val op_nan_p0    = op_a_p0.is_nan() || op_b_p0.is_nan()
+    val op_a_inf_p0  = op_a_p0.is_infinite()
+    val op_b_inf_p0  = op_b_p0.is_infinite()
+    val op_nan_p0    = op_a_p0.is_nan() || op_b_p0.is_nan() || (op_a_inf_p0 && op_b_inf_p0)
 
     //============================================================
     val p1_pipe_ena     = true          // Always true because ROM is pipelined as well.

@@ -38,6 +38,8 @@ class FpxxDivTester extends FunSuite {
         val actualMant   : Long = Fp32.mant(actual)
         val expectedMant : Long = Fp32.mant(expected)
 
+        val error_ratio = ((actual.toDouble-expected.toDouble)/actual.toDouble).abs
+
         var matches = false
         matches |= Fp32.isDenormal(expected) && Fp32.isZero(actual)
         matches |= Fp32.isInfinite(expected) && Fp32.isInfinite(actual)
@@ -46,10 +48,13 @@ class FpxxDivTester extends FunSuite {
                    (Fp32.sign(expected) == Fp32.sign(actual)) &&
                    ((Fp32.mant(expected) - Fp32.mant(actual)).abs < 4)
 
+        matches |= (error_ratio <= (2.0/(1<<24)))
+
         if (!matches){
             printf("\n")
             printf("ERROR!\n")
             printAll(opA, opB, expected, actual);
+            printf("Error ratio: %e\n", error_ratio)
 
             false
         }
@@ -77,17 +82,6 @@ class FpxxDivTester extends FunSuite {
             dut.io.op_vld #= false
             dut.clockDomain.waitSampling()
 
-/*
-            val stimuli = Array[(Float, Float)](
-                                (0,0), (0,1), (1,0),
-                                (0,-0), (0,-1), (-1,0),
-                                (1,1), (1, -1), (-1, 1), (-1, -1),
-                                (100, 1), (-100, 1), (100, -1), (1, -100), (-1, 100), (-100, -1), (-1, -100),
-                                (100000000, 1), (1, 100000000),
-                                (100, 0.001f), (100, -0.001f),
-                                (100, -99.9999f)
-                            )
-*/
             val stimuli = FpxxTesterSupport.directedStimuli
 
             var rand = new scala.util.Random(0)
