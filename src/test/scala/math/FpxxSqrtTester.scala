@@ -78,7 +78,7 @@ class FpxxSqrtTester extends FunSuite {
             dut.io.op_vld #= false
             dut.clockDomain.waitSampling()
 
-            val stimuli = Array[Float](0.0f, 0.5f, 1.0f, 1.999f, 2.0f, 100f)
+            val stimuli = Array[Float](0.0f, 0.5f, 1.0f, 1.999f, 2.0f, 100f, -1.0f, Float.NaN, Float.PositiveInfinity, Float.NegativeInfinity, Float.MaxValue )
 
             var rand = new scala.util.Random(0)
             var i = 0
