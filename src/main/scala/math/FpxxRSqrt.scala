@@ -52,7 +52,9 @@ class FpxxRSqrt(c: FpxxConfig, rsqrtConfig: FpxxRSqrtConfig = null) extends Comp
 
     //============================================================
 
-    val op_zero_p0 = (op_p0.exp === 0)
+    val op_zero_p0 = op_p0.is_zero()
+    val op_nan_p0  = op_p0.is_nan() || op_p0.sign
+    val op_inf_p0  = op_p0.is_infinite()
 
     val exp_p0 = SInt(c.exp_size+1 bits)
     exp_p0 := op_p0.exp.resize(c.exp_size+1).asSInt - c.bias
@@ -66,7 +68,8 @@ class FpxxRSqrt(c: FpxxConfig, rsqrtConfig: FpxxRSqrtConfig = null) extends Comp
     val p1_pipe_ena = pipeStages >= 0
     val p1_vld      = OptPipeInit(p0_vld, False, p1_pipe_ena)
     val op_zero_p1  = OptPipe(op_zero_p0,   p0_vld, p1_pipe_ena)
-    val sign_p1     = OptPipe(op_p0.sign,   p0_vld, p1_pipe_ena)
+    val op_nan_p1   = OptPipe(op_nan_p0,    p0_vld, p1_pipe_ena)
+    val op_inf_p1   = OptPipe(op_inf_p0,    p0_vld, p1_pipe_ena)
     val exp_p1      = OptPipe(exp_p0,       p0_vld, p1_pipe_ena)
 
     val rsqrt_val_p1 = rsqrt_table.readSync(rsqrt_addr_p0, p0_vld)
@@ -82,7 +85,7 @@ class FpxxRSqrt(c: FpxxConfig, rsqrtConfig: FpxxRSqrtConfig = null) extends Comp
     val exp_final_p1  = UInt(c.exp_size bits)
     val mant_final_p1 = UInt(c.mant_size bits)
 
-    when(sign_p1){
+    when(op_nan_p1){
         // Negative -> NaN
         sign_final_p1   := False
         exp_final_p1.setAll
@@ -94,7 +97,7 @@ class FpxxRSqrt(c: FpxxConfig, rsqrtConfig: FpxxRSqrtConfig = null) extends Comp
         exp_final_p1.setAll
         mant_final_p1.clearAll
     }
-    .elsewhen(exp_adj_p1 <= 0){
+    .elsewhen(op_inf_p1 || exp_adj_p1 <= 0){
         // Underflow
         sign_final_p1   := False
         exp_final_p1.clearAll
