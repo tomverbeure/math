@@ -212,3 +212,6 @@ Non-goals:
 
 * [Hybrid LZA: A Near Optimal Implementation of the Leading Zero Anticipator](https://lap.epfl.ch/files/content/sites/lap/files/shared/publications/VermaJan09_HybridLzaANearOptimalImplementationOfTheLeadingZeroAnticipator_ASPDAC09.pdf) (2009)
 
+# Sin/Cos Calculation
+
+* [Computing sin & cos in hardware with synthesisable Verilog](http://kierdavis.com/cordic.html)
