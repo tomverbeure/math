@@ -48,7 +48,7 @@ class FpxxDivTester extends FunSuite {
                    (Fp32.sign(expected) == Fp32.sign(actual)) &&
                    ((Fp32.mant(expected) - Fp32.mant(actual)).abs < 3)
 
-        matches |= (error_ratio <= (2.0/(1<<24)))
+        matches |= (error_ratio < (2.0/(1<<24)))
 
         if (!matches){
             printf("\n")

@@ -16,10 +16,10 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
 
     def pipeStages      = if (divConfig == null) 0 else divConfig.pipeStages
     def halfBits        = (c.mant_size+1)/2
-    def lutMantBits     = if (divConfig == null || divConfig.lutMantBits < 0) 2*halfBits+3 else divConfig.lutMantBits
+    def lutMantBits     = if (divConfig == null || divConfig.lutMantBits < 0) 2*halfBits+2 else divConfig.lutMantBits
     def tableSizeBits   = if (divConfig == null || divConfig.tableSizeBits < 0) halfBits else divConfig.tableSizeBits
     def tableSize       = 1<< tableSizeBits
-    
+
     def divTableContents = for(i <- 0 until tableSize) yield {
         val fin     = 1.0 + i.toDouble / tableSize
         val fout    = 1.0 / (fin * fin)
@@ -28,15 +28,13 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
         val fout_exp    = Fp64.exp(fout)
         var fout_mant   = Fp64.mant(fout)
 
-        val shift = fin_exp - fout_exp
         val round = (fout_mant >> (Fp64.mant_bits-lutMantBits+1)) & 1
-
         fout_mant = (fout_mant >> (Fp64.mant_bits-lutMantBits)) + round
 
-        U( (fout_mant << 2) | (shift & 0x3), (lutMantBits+2) bits) 
+        U(fout_mant, lutMantBits bits)
     }
 
-    val div_table = Mem(UInt(lutMantBits+2 bits), initialContent = divTableContents)
+    val div_table = Mem(UInt(lutMantBits bits), initialContent = divTableContents)
 
     val io = new Bundle {
         val op_vld      = in(Bool)
@@ -68,24 +66,30 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
     val op_b_inf_p0  = op_b_p0.is_infinite()
     val op_nan_p0    = op_a_p0.is_nan() || op_b_p0.is_nan() || (op_a_inf_p0 && op_b_inf_p0)
 
+    // Value in table where 1/y^2 requires exp adjustment of 2 instead of 1
+    val expBoundary = U( ((scala.math.sqrt(2.0)-1.0) * tableSize + 1).toInt, tableSizeBits bits)
+
+    val recip_exp_p0 = (div_addr_p0 === 0) ? U(0, 2 bits) |
+                         ((div_addr_p0 < expBoundary) ? U(1, 2 bits) | U(2, 2 bits))
+
     //============================================================
-    val p1_pipe_ena     = true          // Always true because ROM is pipelined as well.
-    val p1_vld          = OptPipeInit(p0_vld, False, p1_pipe_ena)
-    val yh_m_yl_p1      = OptPipe(yh_m_yl_p0,   p0_vld, p1_pipe_ena)
-    val mant_a_p1       = OptPipe(op_a_p0.mant, p0_vld, p1_pipe_ena)
-    val exp_p1          = OptPipe(exp_p0,       p0_vld, p1_pipe_ena)
-    val sign_p1         = OptPipe(sign_p0,      p0_vld, p1_pipe_ena)
-    val op_a_zero_p1    = OptPipe(op_a_zero_p0, p0_vld, p1_pipe_ena)
-    val op_b_zero_p1    = OptPipe(op_b_zero_p0, p0_vld, p1_pipe_ena)
-    val op_nan_p1       = OptPipe(op_nan_p0,    p0_vld, p1_pipe_ena)
+    val p1_pipe_ena  = true          // Always true because ROM is pipelined as well.
+    val p1_vld       = OptPipeInit(p0_vld, False, p1_pipe_ena)
+    val yh_m_yl_p1   = OptPipe(yh_m_yl_p0,   p0_vld, p1_pipe_ena)
+    val mant_a_p1    = OptPipe(op_a_p0.mant, p0_vld, p1_pipe_ena)
+    val exp_p1       = OptPipe(exp_p0,       p0_vld, p1_pipe_ena)
+    val sign_p1      = OptPipe(sign_p0,      p0_vld, p1_pipe_ena)
+    val op_a_zero_p1 = OptPipe(op_a_zero_p0, p0_vld, p1_pipe_ena)
+    val op_b_zero_p1 = OptPipe(op_b_zero_p0, p0_vld, p1_pipe_ena)
+    val op_nan_p1    = OptPipe(op_nan_p0,    p0_vld, p1_pipe_ena)
+    val recip_exp_p1 = OptPipe(recip_exp_p0, p0_vld, p1_pipe_ena)
 
     val div_val_p1  = div_table.readSync(div_addr_p0, p0_vld)
     //============================================================
 
-    val recip_yh2_p1    = U(1, 1 bits) @@ div_val_p1(2, lutMantBits bits)
-    val recip_shift_p1  = div_val_p1(0, 2 bits)
+    val recip_yh2_p1    = U(1, 1 bits) @@ div_val_p1
 
-    val exp_full_p1  = exp_p1.resize(c.exp_size+2) - recip_shift_p1.resize(c.exp_size+2).asSInt + S(c.bias+1, c.exp_size+2 bits)
+    val exp_full_p1  = exp_p1.resize(c.exp_size+2) - recip_exp_p1.resize(c.exp_size+2).asSInt + S(c.bias+1, c.exp_size+2 bits)
 
     //============================================================
     val p2_pipe_ena     = pipeStages >= 1
