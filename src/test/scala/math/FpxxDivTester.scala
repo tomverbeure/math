@@ -46,7 +46,7 @@ class FpxxDivTester extends FunSuite {
         matches |= Fp32.isNaN(expected)      && Fp32.isNaN(actual)
         matches |= (Fp32.exp(expected)  == Fp32.exp(actual))  &&
                    (Fp32.sign(expected) == Fp32.sign(actual)) &&
-                   ((Fp32.mant(expected) - Fp32.mant(actual)).abs < 4)
+                   ((Fp32.mant(expected) - Fp32.mant(actual)).abs < 3)
 
         matches |= (error_ratio <= (2.0/(1<<24)))
 

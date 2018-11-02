@@ -16,7 +16,7 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
 
     def pipeStages      = if (divConfig == null) 0 else divConfig.pipeStages
     def halfBits        = (c.mant_size+1)/2
-    def lutMantBits     = if (divConfig == null || divConfig.lutMantBits < 0) 2*halfBits+1 else divConfig.lutMantBits
+    def lutMantBits     = if (divConfig == null || divConfig.lutMantBits < 0) 2*halfBits+3 else divConfig.lutMantBits
     def tableSizeBits   = if (divConfig == null || divConfig.tableSizeBits < 0) halfBits else divConfig.tableSizeBits
     def tableSize       = 1<< tableSizeBits
     
@@ -131,9 +131,13 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
     val op_nan_p4       = OptPipe(op_nan_p3,     p3_vld, p4_pipe_ena)
     //============================================================
 
+    // In the stage after this, we need to shift-adjust div based on the result
+    // of the multiplication by 0 to 3. To make sure that we don't drop
+    // any of the final lower bits, we need drag along 3 extra bits.
+
     val div_full_p4 = x_mul_yhyl_p4 * recip_yh2_p4
-    val divShift = div_full_p4.getWidth-(2*halfBits+1)
-    val div_p4      = div_full_p4(divShift, 2*halfBits+1 bits)
+    val divShift = div_full_p4.getWidth-(2*halfBits+3)
+    val div_p4      = div_full_p4(divShift, 2*halfBits+3 bits)
 
     //============================================================
     val p5_pipe_ena     = pipeStages >= 2
@@ -150,20 +154,24 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
     val exp_adj_p5 = SInt(c.exp_size+2 bits)
     val exp_delta_p5 = SInt(c.exp_size+2 bits)
 
-    when(div_p5(2*halfBits)){
-        div_adj_p5      := (div_p5 >> 1).resize(2*halfBits-1)
+    when(div_p5(2*halfBits+2)){
+        // div is "1xxxx...."
+        div_adj_p5      := (div_p5 >> 3).resize(2*halfBits-1)
         exp_delta_p5    := 1
     }
-    .elsewhen(div_p5(2*halfBits-2, 2 bits) === U"01"){
-        div_adj_p5 := (div_p5 << 1).resize(2*halfBits-1)
+    .elsewhen(div_p5(2*halfBits, 2 bits) === U"01"){
+        // div is "001xx...."
+        div_adj_p5 := (div_p5 >> 1).resize(2*halfBits-1)
         exp_delta_p5    := -1
     }
-    .elsewhen(div_p5(2*halfBits-3, 3 bits) === U"001"){
-        div_adj_p5      := (div_p5 << 2).resize(2*halfBits-1)
+    .elsewhen(div_p5(2*halfBits-1, 3 bits) === U"001"){
+        // div is "0001xx...."
+        div_adj_p5      := (div_p5).resize(2*halfBits-1)
         exp_delta_p5    := -2
     }
     .otherwise{
-        div_adj_p5      := div_p5.resize(2*halfBits-1)
+        // div is "01xx...."
+        div_adj_p5      := (div_p5 >> 2).resize(2*halfBits-1)
         exp_delta_p5    := 0
     }
 
