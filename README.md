@@ -165,11 +165,31 @@ Non-goals:
 
 * [A Pipelined Divider with a Small Lookup Table](http://www.wseas.us/e-library/conferences/2007hangzhou/papers/560-407.pdf)
 
-    Paper that describes a similar divider as the one in the presentation above.
+    Paper that describes a similar divider as the one in the presentation above, but with smaller lookup table and more multipliers.
+
+* [Reciprocation, Square root, Inverse Square Root, and some Elementary Functions using Small Multipliers](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.30.7789&rep=rep1&type=pdf)
+
+    Paper that is references by the papers above as main inspiration for the LUT + multipliers approach.
+
+    Had detailed mathematical derivation about how things work.
 
 ## Square Root and Reciprocal Square Root
 
-* [Implement Fixed-Point Square Root Using Lookup Table](https://www.mathworks.com/help/fixedpoint/examples/implement-fixed-point-square-root-using-lookup-table.html)
+* [Matlab - Implement Fixed-Point Square Root Using Lookup Table](https://www.mathworks.com/help/fixedpoint/examples/implement-fixed-point-square-root-using-lookup-table.html)
+
+    Matlab code for fixed point square root lookup table.
+
+* [Variable Precision Floating Point Division and Square Root](http://www.dtic.mil/dtic/tr/fulltext/u2/a433087.pdf)
+
+    Uses combination of table lookup and a bunch of multipliers for square root. See same paper under the 'Division' section for related information.
+
+* [Implementation of Single Precision Floating Point Square Root on FPGAs](https://pdfs.semanticscholar.org/1c3c/569f613024e8164450daf05a01163c99f72c.pdf)
+
+    Shows simple interative implementation and pipelined version, both for integer-only and floating point.
+
+    FP32 version requires 15 pipeline stages instead of 24, because some stages are so small that they can be collapsed.
+
+    Does *not* use a lookup table or multiplier, just a bunch of adders.
 
 * [Methods of Computing Square Roots](https://en.wikipedia.org/wiki/Methods_of_computing_square_roots)
 
@@ -191,7 +211,6 @@ Non-goals:
 
 * [Fast interactive sqrt](https://pdfs.semanticscholar.org/5060/4e9aff0e37089c4ab9a376c3f35761ffe28b.pdfv)
 
-* [...](https://pdfs.semanticscholar.org/1c3c/569f613024e8164450daf05a01163c99f72c.pdf)
 
 ## Leading Zero Counter (LZC) and Leading Zero Anticipor (LZA)
 
