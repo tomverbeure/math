@@ -167,11 +167,12 @@ Non-goals:
 
     Paper that describes a similar divider as the one in the presentation above, but with smaller lookup table and more multipliers.
 
-* [Reciprocation, Square root, Inverse Square Root, and some Elementary Functions using Small Multipliers](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.30.7789&rep=rep1&type=pdf)
+* [Fast Division Algorithm with a Small Lookup Table](http://citeseerx.ist.psu.edu/viewdoc/download;jsessionid=21713E8242DF34DCC6DE68623F47AC1F?doi=10.1.1.43.3795&rep=rep1&type=pdf)
 
-    Paper that is references by the papers above as main inspiration for the LUT + multipliers approach.
+    Paper that is referenced by the two papers above as main inspiration for the LUT + 2 multipliers division operation.
 
-    Had detailed mathematical derivation about how things work.
+    Includes detailed mathematical derivation and error analysis.
+
 
 ## Square Root and Reciprocal Square Root
 
@@ -190,6 +191,12 @@ Non-goals:
     FP32 version requires 15 pipeline stages instead of 24, because some stages are so small that they can be collapsed.
 
     Does *not* use a lookup table or multiplier, just a bunch of adders.
+
+* [Reciprocation, Square root, Inverse Square Root, and some Elementary Functions using Small Multipliers](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.30.7789&rep=rep1&type=pdf)
+
+    Paper that is referenced by the papers above as main inspiration for the LUT + multipliers approach.
+
+    Had detailed mathematical derivation about how things work.
 
 * [Methods of Computing Square Roots](https://en.wikipedia.org/wiki/Methods_of_computing_square_roots)
 
