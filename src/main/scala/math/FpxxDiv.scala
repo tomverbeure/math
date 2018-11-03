@@ -156,29 +156,28 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
 
     val div_adj_p5 = UInt(c.mant_size bits)
     val exp_adj_p5 = SInt(c.exp_size+2 bits)
-    val exp_delta_p5 = SInt(c.exp_size+2 bits)
 
-    when(div_p5(2*halfBits+2)){
-        // div is "1xxxx...."
-        div_adj_p5      := (div_p5 >> 3).resize(2*halfBits-1)
+    val shift_adj_p5 = UInt(2 bits)
+    val exp_delta_p5 = SInt(3 bits)
+
+    when(div_p5(div_p5.getWidth-1, 1 bits) === U"1"){
+        shift_adj_p5    := 3
         exp_delta_p5    := 1
     }
-    .elsewhen(div_p5(2*halfBits, 2 bits) === U"01"){
-        // div is "001xx...."
-        div_adj_p5 := (div_p5 >> 1).resize(2*halfBits-1)
-        exp_delta_p5    := -1
-    }
-    .elsewhen(div_p5(2*halfBits-1, 3 bits) === U"001"){
-        // div is "0001xx...."
-        div_adj_p5      := (div_p5).resize(2*halfBits-1)
-        exp_delta_p5    := -2
-    }
-    .otherwise{
-        // div is "01xx...."
-        div_adj_p5      := (div_p5 >> 2).resize(2*halfBits-1)
+    .elsewhen(div_p5(div_p5.getWidth-2, 2 bits) === U"01"){
+        shift_adj_p5    := 2
         exp_delta_p5    := 0
     }
+    .elsewhen(div_p5(div_p5.getWidth-3, 3 bits) === U"001"){
+        shift_adj_p5    := 1
+        exp_delta_p5    := -1
+    }
+    .otherwise {
+        shift_adj_p5    := 0
+        exp_delta_p5    := -2
+    }
 
+    div_adj_p5   := (div_p5 >> shift_adj_p5).resize(2*halfBits-1)
     exp_adj_p5   := exp_full_p5 + exp_delta_p5
 
     //============================================================
