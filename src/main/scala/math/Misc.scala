@@ -81,7 +81,7 @@ object Fp64 {
     def exp_mask    = (1L<<exp_bits)-1
     def mant_bits   = 52
     def mant_mask   = (1L<<mant_bits)-1
-    def bias        = 1024
+    def bias        = 1023
 
     def asBits(f: Double) : Long = java.lang.Double.doubleToLongBits(f)
 
