@@ -234,3 +234,27 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 }
 
 
+class FpxxSub(c: FpxxConfig, pipeStages: Int = 1) extends Component {
+
+    val io = new Bundle {
+        val op_vld      = in(Bool)
+        val op_a        = in(Fpxx(c))
+        val op_b        = in(Fpxx(c))
+
+        val result_vld  = out(Bool)
+        val result      = out(Fpxx(c))
+    }
+
+    val op_b = Fpxx(c)
+    op_b.sign   := !io.op_b.sign
+    op_b.exp    := io.op_b.exp
+    op_b.mant   := io.op_b.mant
+
+    val u_add = new FpxxAdd(c, pipeStages)
+    u_add.io.op_vld     <> io.op_vld
+    u_add.io.op_a       <> io.op_a
+    u_add.io.op_b       <> op_b
+
+    u_add.io.result_vld <> io.result_vld
+    u_add.io.result     <> io.result
+}
