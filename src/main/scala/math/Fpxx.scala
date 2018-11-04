@@ -55,9 +55,16 @@ case class Fpxx(c: FpxxConfig) extends Bundle {
     }
 
     def fromDouble(d: Double) = {
-        sign    := Bool((Fp64.sign(d) & 1) == 1)
-        exp     := U(Fp64.exp(d)- Fp64.bias + c.bias, c.exp_size bits)
-        mant    := U(Fp64.mant(d) >> (Fp64.mant_bits - c.mant_size), c.mant_size bits)
+        if (Fp64.exp(d) == 0){
+            sign    := False
+            exp     := U(0, c.exp_size bits)
+            mant    := U(0, c.mant_size bits)
+        }
+        else{
+            sign    := Bool((Fp64.sign(d) & 1) == 1)
+            exp     := U(Fp64.exp(d)- Fp64.bias + c.bias, c.exp_size bits)
+            mant    := U(Fp64.mant(d) >> (Fp64.mant_bits - c.mant_size), c.mant_size bits)
+        }
     }
 
     def init() : Fpxx = {
