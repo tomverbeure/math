@@ -457,7 +457,7 @@ public:
 
                 double f     = 1.0/sqrt(fin);
 
-                unsigned mant =  double_as_long(f) & FP64_MANT_MASK;
+                uint64_t mant =  double_as_long(f) & FP64_MANT_MASK;
                 int exp       = (double_as_long(f) >> FP64_MANT_BITS) & FP64_EXP_MASK;
 
                 int shift = fin_exp - exp;
