@@ -505,6 +505,28 @@ public:
         return r;
     }
 
+    int to_int () const {
+        int exp_unbias = exp - _zero_offset;
+        if (exp_unbias < 0)
+            return 0;
+
+        int result = (1L << _m_size) | m;
+
+        exp_unbias -= (_m_size);
+
+        if (exp_unbias >= 0){
+            result <<= exp_unbias;
+        }
+        else{
+            result >>= -exp_unbias;
+        }
+
+        if (sign){
+            result = -result;
+        }
+
+        return result;
+    }
 
     void print_bits() {
         printf("%d ", sign);

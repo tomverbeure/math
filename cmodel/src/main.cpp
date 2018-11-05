@@ -298,6 +298,28 @@ int main(int argc, char **argv)
 #endif
 
 #if 1
+    int left_orig = (1<<25) + (1<<23);
+    left =  left_orig;
+    cout << "float: " << left << " int: " << left.to_int() << endl;
+    left = 0.1;
+    cout << "float: " << left << " int: " << left.to_int() << endl;
+    left = 0.6;
+    cout << "float: " << left << " int: " << left.to_int() << endl;
+    left = 1.1;
+    cout << "float: " << left << " int: " << left.to_int() << endl;
+    left = 2.6;
+    cout << "float: " << left << " int: " << left.to_int() << endl;
+    left = 100.6;
+    cout << "float: " << left << " int: " << left.to_int() << endl;
+    left = 1000.6;
+    cout << "float: " << left << " int: " << left.to_int() << endl;
+    left = -10000.6;
+    cout << "float: " << left << " int: " << left.to_int() << endl;
+    left = 1000000.6;
+    cout << "float: " << left << " int: " << left.to_int() << endl;
+#endif
+
+#if 1
     left = 1;
     right = 1;
     my_fp = left * right;
