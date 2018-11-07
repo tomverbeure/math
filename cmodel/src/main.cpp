@@ -67,6 +67,31 @@ unsigned int sqrt_int(unsigned int s)
     return r;
 }
 
+uint32_t sqrt_iter(uint32_t d, int result_bits)
+{
+    uint32_t q = 0;
+    int32_t  r = 0;
+
+    for(int k=result_bits-1; k>=0; --k){
+        if (r >= 0){
+            r = ((r << 2) | ((d >> 30) & 3)) - ((q<<2) | 1);
+        }
+        else{
+            r = ((r << 2) | ((d >> 30) & 3)) + ((q<<2) | 3);
+        }
+
+        if (r >=0) {
+            q = (q<<1) | 1;
+        }
+        else{
+            q = (q<<1) | 0;
+        }
+
+        d <<= 2;
+    }
+
+    return q;
+}
 
 float sqrt_fp32(float s)
 {
