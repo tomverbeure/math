@@ -322,7 +322,7 @@ int main(int argc, char **argv)
     print_fp32_fpxx(fp32, my_fp);
 #endif
 
-#if 1
+#if 0
     int left_orig = (1<<25) + (1<<23);
     left =  left_orig;
     cout << "float: " << left << " int: " << left.to_int() << endl;
@@ -344,7 +344,7 @@ int main(int argc, char **argv)
     cout << "float: " << left << " int: " << left.to_int() << endl;
 #endif
 
-#if 1
+#if 0
     left = 1;
     right = 1;
     my_fp = left * right;
@@ -360,7 +360,7 @@ int main(int argc, char **argv)
 #endif
 
 
-#if 0
+#if 1
     cout << "--------------" << endl;
     left = 0.5;
     cout << left << " r_sqrt: " << 1.0/sqrt((float)left) << "," << recip_sqrt(left) << endl;

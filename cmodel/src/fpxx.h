@@ -36,7 +36,7 @@ class fpxx {
 
 public:
     bool        sign;
-    uint32_t    exp;
+    int32_t     exp;
     uint64_t    m;
 
     fpxx() {
