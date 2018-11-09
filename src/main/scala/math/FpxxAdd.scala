@@ -5,7 +5,14 @@ import spinal.core._
 
 // Doesn't support: denormals, rounding, and correct signed zeros
 
-class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
+case class FpxxAddConfig(
+    pipeStages      : Int = 1
+    ){
+}
+
+class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = null) extends Component {
+
+    def pipeStages      = if (addConfig == null) 1 else addConfig.pipeStages
 
     val io = new Bundle {
         val op_vld      = in(Bool)
@@ -234,7 +241,7 @@ class FpxxAdd(c: FpxxConfig, pipeStages: Int = 1) extends Component {
 }
 
 
-class FpxxSub(c: FpxxConfig, pipeStages: Int = 1) extends Component {
+class FpxxSub(c: FpxxConfig, addConfig: FpxxAddConfig) extends Component {
 
     val io = new Bundle {
         val op_vld      = in(Bool)
@@ -250,7 +257,7 @@ class FpxxSub(c: FpxxConfig, pipeStages: Int = 1) extends Component {
     op_b.exp    := io.op_b.exp
     op_b.mant   := io.op_b.mant
 
-    val u_add = new FpxxAdd(c, pipeStages)
+    val u_add = new FpxxAdd(c, addConfig)
     u_add.io.op_vld     <> io.op_vld
     u_add.io.op_a       <> io.op_a
     u_add.io.op_b       <> op_b

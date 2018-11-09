@@ -57,7 +57,7 @@ class FpxxDemo extends Component {
 
     val core = new ClockingArea(coreClockDomain) {
 
-        val add = new FpxxAdd(config, pipeStages = 5)
+        val add = new FpxxAdd(config, FpxxAddConfig(pipeStages = 5))
         add.io.op_vld :=    RegNext(io.op_vld)
         add.io.op_a.fromVec(RegNext(io.op_a))
         add.io.op_b.fromVec(RegNext(io.op_b))
