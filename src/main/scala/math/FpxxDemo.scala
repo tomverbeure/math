@@ -65,7 +65,7 @@ class FpxxDemo extends Component {
         io.op_a_p_op_b_vld := RegNext(add.io.result_vld)
         io.op_a_p_op_b     := RegNext(add.io.result).toVec()
 
-        val mul = new FpxxMul(config, pipeStages = 5)
+        val mul = new FpxxMul(config, FpxxMulConfig(pipeStages = 5))
         mul.io.op_vld :=    RegNext(io.op_vld)
         mul.io.op_a.fromVec(RegNext(io.op_a))
         mul.io.op_b.fromVec(RegNext(io.op_b))

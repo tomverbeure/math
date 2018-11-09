@@ -21,7 +21,7 @@ object FpxxMulTester {
             val result      = out(Bits(config.full_size bits))
         }
 
-        val fp_op = new FpxxMul(config, pipeStages = 5)
+        val fp_op = new FpxxMul(config, FpxxMulConfig(pipeStages = 5))
         fp_op.io.op_vld :=    RegNext(io.op_vld) init(False)
         fp_op.io.op_a.fromVec(RegNext(io.op_a))
         fp_op.io.op_b.fromVec(RegNext(io.op_b))

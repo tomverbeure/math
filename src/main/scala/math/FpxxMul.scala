@@ -3,7 +3,14 @@ package math
 
 import spinal.core._
 
-class FpxxMul(c: FpxxConfig, pipeStages: Int = 1) extends Component {
+case class FpxxMulConfig(
+    pipeStages      : Int = 1
+    ){
+}
+
+class FpxxMul(c: FpxxConfig, mulConfig: FpxxMulConfig = null) extends Component {
+
+    def pipeStages      = if (mulConfig == null) 1 else mulConfig.pipeStages
 
     val io = new Bundle {
         val op_vld      = in(Bool)
