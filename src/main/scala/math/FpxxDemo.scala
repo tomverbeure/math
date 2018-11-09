@@ -57,6 +57,14 @@ class FpxxDemo extends Component {
 
     val core = new ClockingArea(coreClockDomain) {
 
+        val u_sint2fpxx_8 = new SInt2Fpxx(8, config)
+        u_sint2fpxx_8.io.op_vld := True
+        u_sint2fpxx_8.io.op     := S(24, 8 bits)
+
+        val u_sint2fpxx_16 = new SInt2Fpxx(16, config)
+        u_sint2fpxx_16.io.op_vld := True
+        u_sint2fpxx_16.io.op     := S(-24, 16 bits)
+
         val add = new FpxxAdd(config, FpxxAddConfig(pipeStages = 5))
         add.io.op_vld :=    RegNext(io.op_vld)
         add.io.op_a.fromVec(RegNext(io.op_a))
