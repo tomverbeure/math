@@ -86,7 +86,7 @@ class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = null) extends Component 
 
     val p1_pipe_ena = pipeStages >= 3
 
-    val p1_vld          = OptPipeInit(p0_vld, False, p1_pipe_ena)
+    val p1_vld          = OptPipeInit(p0_vld, False,       p1_pipe_ena)
     val op_is_zero_p1   = OptPipe(op_is_zero_p0,   p0_vld, p1_pipe_ena)
     val op_is_nan_p1    = OptPipe(op_is_nan_p0,    p0_vld, p1_pipe_ena)
     val op_is_inf_p1    = OptPipe(op_is_inf_p0,    p0_vld, p1_pipe_ena)
@@ -110,7 +110,7 @@ class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = null) extends Component 
 
     val p2_pipe_ena = pipeStages >= 1
 
-    val p2_vld        = OptPipeInit(p1_vld, False, p2_pipe_ena)
+    val p2_vld        = OptPipeInit(p1_vld, False,     p2_pipe_ena)
     val op_is_zero_p2 = OptPipe(op_is_zero_p1, p1_vld, p2_pipe_ena)
     val op_is_nan_p2  = OptPipe(op_is_nan_p1,  p1_vld, p2_pipe_ena)
     val op_is_inf_p2  = OptPipe(op_is_inf_p1,  p1_vld, p2_pipe_ena)
@@ -147,7 +147,7 @@ class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = null) extends Component 
 
     val p3_pipe_ena = pipeStages >= 4
 
-    val p3_vld            = OptPipeInit(p2_vld, False, p3_pipe_ena)
+    val p3_vld            = OptPipeInit(p2_vld, False,         p3_pipe_ena)
     val op_is_zero_p3     = OptPipe(op_is_zero_p2,     p2_vld, p3_pipe_ena)
     val op_is_nan_p3      = OptPipe(op_is_nan_p2,      p2_vld, p3_pipe_ena)
     val op_is_inf_p3      = OptPipe(op_is_inf_p2,      p2_vld, p3_pipe_ena)
@@ -164,7 +164,7 @@ class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = null) extends Component 
 
     val p4_pipe_ena = pipeStages >= 2
 
-    val p4_vld        = OptPipeInit(p3_vld, False, p4_pipe_ena)
+    val p4_vld        = OptPipeInit(p3_vld, False,     p4_pipe_ena)
     val op_is_zero_p4 = OptPipe(op_is_zero_p3, p3_vld, p4_pipe_ena)
     val op_is_nan_p4  = OptPipe(op_is_nan_p3,  p3_vld, p4_pipe_ena)
     val op_is_inf_p4  = OptPipe(op_is_inf_p3,  p3_vld, p4_pipe_ena)
@@ -200,7 +200,7 @@ class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = null) extends Component 
 
     val p5_pipe_ena = pipeStages >= 5
 
-    val p5_vld        = OptPipeInit(p4_vld, False, p4_pipe_ena)
+    val p5_vld        = OptPipeInit(p4_vld, False,       p5_pipe_ena)
     val op_is_nan_p5  = OptPipe(op_is_nan_p4,    p4_vld, p5_pipe_ena)
     val op_is_inf_p5  = OptPipe(op_is_inf_p4,    p4_vld, p5_pipe_ena)
     val lz_p5         = OptPipe(lz_p4,           p4_vld, p5_pipe_ena)
