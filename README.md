@@ -192,6 +192,10 @@ Non-goals:
 
     Does *not* use a lookup table or multiplier, just a bunch of adders.
 
+* [An Optimized Square Root Algorithm for Implementation in FPGA Hardware](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.174.6832&rep=rep1&type=pdf)
+
+    Seems to be equivalent to the previous one.
+
 * [Reciprocation, Square root, Inverse Square Root, and some Elementary Functions using Small Multipliers](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.30.7789&rep=rep1&type=pdf)
 
     Paper that is referenced by the papers above as main inspiration for the LUT + multipliers approach.
