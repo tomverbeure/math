@@ -508,13 +508,13 @@ public:
 
         int result = (1L << _m_size) | m;
 
-        exp_unbias -= (_m_size);
+        int shift = exp_unbias - _m_size;
 
-        if (exp_unbias >= 0){
-            result <<= exp_unbias;
+        if (shift >= 0){
+            result <<= shift;
         }
         else{
-            result >>= -exp_unbias;
+            result >>= -shift;
         }
 
         if (sign){
