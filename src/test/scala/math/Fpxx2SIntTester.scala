@@ -20,7 +20,7 @@ object Fpxx2SIntTester {
             val result      = out(Bits(28 bits))
         }
 
-        val u_fpxx2sint_8 = new Fpxx2SInt(28, 0, config)
+        val u_fpxx2sint_8 = new Fpxx2SInt(16, 12, config)
         u_fpxx2sint_8.io.op_vld := RegNext(io.op_vld) init(False)
         u_fpxx2sint_8.io.op.fromVec(RegNext(io.op))
 
@@ -46,7 +46,9 @@ class Fpxx2SIntTester extends FunSuite {
             dut.io.op_vld #= false
             dut.clockDomain.waitSampling()
 
-            val stimuli = Array[Double](0.0, 1.0, -1.0, 0.0001, 0.5, 20.0, 50.0, (1L<<40).toDouble, -((1L<<32).toDouble), -1000.0, 127.55555, 255.55555)
+            val stimuli = Array[Double](0.0, 1.0, -1.0, 0.0001, 0.5, 20.0, 50.0,
+                                        32767.5, 32768.0, -32767.5, -32768.0, 65535.5, 65536.0, -65535.5, -65536.0,
+                                        (1L<<40).toDouble, -((1L<<32).toDouble), -1000.0, 127.55555, 255.55555)
 
             var i = 0
             var pass = 0
@@ -72,7 +74,7 @@ class Fpxx2SIntTester extends FunSuite {
                 }
 
                 // Actual result
-                val result_act = ((dut.io.result.toInt<<4)>>4).toFloat
+                val result_act = ((dut.io.result.toInt<<4)>>4).toDouble / (1<<12)
 
                 dut.clockDomain.waitSampling()
 
