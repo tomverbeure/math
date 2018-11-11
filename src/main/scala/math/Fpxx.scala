@@ -40,6 +40,16 @@ case class Fpxx(c: FpxxConfig) extends Bundle {
         mant    := 0
     }
 
+    def abs() : Fpxx = {
+        val abs = Fpxx(c)
+
+        abs.sign := False
+        abs.exp  := exp
+        abs.mant := mant
+
+        abs
+    }
+
     def full_mant() : UInt = {
         mant.resize(c.mant_size+1) | (1<<c.mant_size)
     }
