@@ -5,7 +5,7 @@ import spinal.core._
 
 class Fpxx2SInt(intNrBits: Int, fracNrBits: Int, c: FpxxConfig) extends Component {
     
-    assert(intNrBits + fracNrBits > c.mant_size, "Not enough its for SInt size")
+    assert(intNrBits + fracNrBits + 2 > c.mant_size, "Not enough bits for SInt size")
 
     def pipeStages = 1
 
@@ -14,7 +14,7 @@ class Fpxx2SInt(intNrBits: Int, fracNrBits: Int, c: FpxxConfig) extends Componen
         val op          = in(Fpxx(c))
 
         val result_vld  = out(Bool)
-        val result      = out(SInt((intNrBits) bits))
+        val result      = out(SInt((intNrBits + 0) bits))
         val result_ovfl = out(Bool)
     }
 
@@ -25,7 +25,7 @@ class Fpxx2SInt(intNrBits: Int, fracNrBits: Int, c: FpxxConfig) extends Componen
     val ge0_p0      = op_p0.exp >= c.bias
 
     val shift_p0    = SInt(c.exp_size+2 bits)
-    shift_p0 := (U"00" @@ op_p0.exp).asSInt - c.bias - intNrBits - 1
+    shift_p0 := (intNrBits - 2 + c.bias) - (U"00" @@ op_p0.exp).asSInt
 
     val mant_full_p0 = (U"01" @@ op_p0.mant).asSInt
     val mant_2c_p0   = sign_p0 ? -mant_full_p0 | mant_full_p0
@@ -38,22 +38,22 @@ class Fpxx2SInt(intNrBits: Int, fracNrBits: Int, c: FpxxConfig) extends Componen
     val mant_2c_p1      = OptPipe(mant_2c_p0, p0_vld, p1_pipe_ena)
     //============================================================
 
-    val shift_clipped_p1 = UInt(log2Up(intNrBits) bits)
+    val shift_clipped_p1 = UInt(log2Up(intNrBits+0) bits)
     shift_clipped_p1 := shift_p1.asUInt.resize(shift_clipped_p1.getWidth)
 
-    val int_p1 = SInt(intNrBits bits)
+    val int_p1 = SInt((intNrBits+0) bits)
     val ovfl_p1 = Bool
 
-    when(shift_p1 >= intNrBits){
+    when(shift_p1 >= (intNrBits+0) || !ge0_p1){
         int_p1.clearAll
         ovfl_p1 := False
     }
     .elsewhen(shift_p1 < 0){
-        int_p1.setAll
+        int_p1 := S(int_p1.getWidth bits, (int_p1.getWidth-1) -> mant_2c_p1.msb, default -> !mant_2c_p1.msb)
         ovfl_p1 := True
     }
     .otherwise{
-        int_p1 := (mant_2c_p1 @@ S(0, (intNrBits-mant_2c_p1.getWidth) bits)) |>> shift_clipped_p1
+        int_p1 := (mant_2c_p1 @@ S(0, (intNrBits+0-mant_2c_p1.getWidth) bits)) |>> shift_clipped_p1
         ovfl_p1 := False
     }
 
