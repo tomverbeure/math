@@ -22,10 +22,10 @@ class Fpxx2SInt(intNrBits: Int, fracNrBits: Int, c: FpxxConfig) extends Componen
     val op_p0   = io.op
 
     val sign_p0     = op_p0.sign
-    val ge0_p0      = op_p0.exp >= c.bias
+    val ge0_p0      = op_p0.exp >= (c.bias-fracNrBits)
 
     val shift_p0    = SInt(c.exp_size+2 bits)
-    shift_p0 := (intNrBits - 2 + c.bias) - (U"00" @@ op_p0.exp).asSInt
+    shift_p0 := (intNrBits - 2 + c.bias) - (U"00" @@ op_p0.exp).asSInt      // -2: sign bit + leading "1" of mantissa
 
     val mant_full_p0 = (U"01" @@ op_p0.mant).asSInt
     val mant_2c_p0   = sign_p0 ? -mant_full_p0 | mant_full_p0
