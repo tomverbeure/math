@@ -18,6 +18,8 @@ In general, Michael's version is always ~25% faster. I think that this is becaus
 operations that map naturally onto a CPU ALU operations. The FPGA optimized version
 relies more on bit manipulation.
 
+The [Godbolt Compiler Explorer versions of the code](https://godbolt.org/z/aejjnh). 
+
 I suspect that in hardware, Michael's version will require more logic.
 
 Here are the results on my brand new AMD 5600X system:
