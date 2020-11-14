@@ -12,64 +12,98 @@ u_int32_t hamster_sqrt(u_int32_t i)
 	int delta_part_b = bit*bit;
 
 	while(bit > 0){
-	int temp = i - (delta_part_a + delta_part_b);
-	delta_part_a >>= 1;
-	if (temp >= 0){
-		i = temp;
-		delta_part_a |=  delta_part_b;
-		n |= bit;
-	}
-	delta_part_b >>= 2;
-	bit >>= 1;
+		int temp = i - (delta_part_a + delta_part_b);
+		delta_part_a >>= 1;
+		if (temp >= 0){
+			i = temp;
+			delta_part_a |=  delta_part_b;
+			n |= bit;
+		}
+		delta_part_b >>= 2;
+		bit >>= 1;
 	}
 
 	return n;
 }
+
+// Code based on "Implementation of Single Precision Floating Point Square Root on FPGAs"
+// Non-Restoring Square Root Algorithm
+// https://yamin.cis.k.hosei.ac.jp/papers/FCCM97.pdf
 
 u_int32_t fpga_sqrt(u_int32_t d)
 {
 	u_int32_t q = 0;
 	int32_t r = 0;
 
-	for(int k=15; k>= 0; --k){
-		if (r >= 0){
+	for(int k=15; k>=0; --k){
+		if (r >= 0)
 			r = ((r<<2) | ((d >> (2*k)) & 3)) - ((q<<2) | 1);
-		}
-		else{
+		else
 			r = ((r<<2) | ((d >> (2*k)) & 3)) + ((q<<2) | 3);
-		}
 
-		if (r >= 0){
-			q = (q<<1) | 1;
-		}
-		else{
-			q = (q<<1);
-		}
-	}
-
-	if (r < 0){
-		r = r + ((q<<1) | 1);
+		q = (q<<1) | (r >= 0);
 	}
 
 	return q;
 }
 
-
-int main()
+int bench(int nr_loops, int buf_size, u_int32_t (*sqrt)(u_int32_t))
 {
-	srand(0);
+	u_int32_t result = 0;
 
-	for(int i=0; i<100; ++i){
+	u_int32_t *buf = malloc(buf_size * sizeof(u_int32_t));
+	for(int i=0; i<buf_size; ++i){
+		buf[i] = rand() & 0xffffffff;
+	}
+
+	for(int i=0;i<nr_loops;++i){
+		for(int j=0;j<buf_size;++j){
+			result += sqrt(buf[j]);
+		}
+	}
+
+	return result;
+}
+
+int test(int nr_loops, u_int32_t (*sqrt)(u_int32_t))
+{
+	for(int i=0; i<nr_loops; ++i){
 		u_int32_t op;
 
-		op = rand() & 0xffffff;
+		op = rand() & 0xffffffff;
 		u_int32_t result_ref = (u_int32_t)sqrt(op);
-		//u_int32_t result_dut = hamster_sqrt(op);
-		u_int32_t result_dut = fpga_sqrt(op);
+		u_int32_t result_dut = sqrt(op);
 
 		if (result_ref != result_dut){
 			printf("op (%d): ref (%d) != dut (%d)\n", op, result_ref, result_dut);
+			return 0;
 		}
 	}
+
+	return 1;
+}
+
+int main(int argc, char **argv)
+{
+	srand(0);
+
+	int nr_loops = 100;
+	int test_or_bench = 0;
+	int hamster_or_fpga = 0;
+
+	if (argc >= 4){
+		test_or_bench = atoi(argv[1]);
+		hamster_or_fpga = atoi(argv[2]);
+		nr_loops = atoi(argv[3]);
+	}
+
+	printf("Type: %s\n", test_or_bench == 0 ? "test" : "benchmark");
+	printf("Algo: %s\n", hamster_or_fpga == 0 ? "hamster" : "fpga");
+	printf("Nr loops: %d\n", nr_loops);
+
+	if (test_or_bench == 0)
+		test(nr_loops, hamster_or_fpga==0 ? hamster_sqrt : fpga_sqrt);
+	else
+		bench(nr_loops, 10000, hamster_or_fpga==0 ? hamster_sqrt :  fpga_sqrt);
 }
 
