@@ -8,6 +8,8 @@ gcc -g -Os sqrt.c -lm -o sqrt
 time ./sqrt 1 0 10000
 echo
 time ./sqrt 1 1 10000
+echo
+time ./sqrt 1 2 10000
 
 echo
 echo ===================================
@@ -18,6 +20,8 @@ gcc -g -O2 sqrt.c -lm -o sqrt
 time ./sqrt 1 0 10000
 echo
 time ./sqrt 1 1 10000
+echo
+time ./sqrt 1 2 10000
 
 
 echo
@@ -29,6 +33,8 @@ gcc -g -O3 sqrt.c -lm -o sqrt
 time ./sqrt 1 0 10000
 echo
 time ./sqrt 1 1 10000
+echo
+time ./sqrt 1 2 10000
 
 echo
 echo ===================================
@@ -39,6 +45,8 @@ clang -g -O2 sqrt.c -lm -o sqrt
 time ./sqrt 1 0 10000
 echo
 time ./sqrt 1 1 10000
+echo
+time ./sqrt 1 2 10000
 
 echo
 echo ===================================
@@ -49,6 +57,8 @@ clang -g -O2 sqrt.c -lm -o sqrt
 time ./sqrt 1 0 10000
 echo
 time ./sqrt 1 1 10000
+echo
+time ./sqrt 1 2 10000
 
 
 echo
@@ -60,5 +70,7 @@ clang -g -O3 sqrt.c -lm -o sqrt
 time ./sqrt 1 0 10000
 echo
 time ./sqrt 1 1 10000
+echo
+time ./sqrt 1 2 10000
 
 echo

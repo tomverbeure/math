@@ -30,7 +30,7 @@ u_int32_t hamster_sqrt(u_int32_t i)
 // Non-Restoring Square Root Algorithm
 // https://yamin.cis.k.hosei.ac.jp/papers/FCCM97.pdf
 
-u_int32_t fpga_sqrt(u_int32_t d)
+u_int32_t fpga_sqrt_rev1(u_int32_t d)
 {
 	u_int32_t q = 0;
 	int32_t r = 0;
@@ -40,6 +40,24 @@ u_int32_t fpga_sqrt(u_int32_t d)
 			r = ((r<<2) | ((d >> (2*k)) & 3)) - ((q<<2) | 1);
 		else
 			r = ((r<<2) | ((d >> (2*k)) & 3)) + ((q<<2) | 3);
+
+		q = (q<<1) | (r >= 0);
+	}
+
+	return q;
+}
+
+u_int32_t fpga_sqrt_rev2(u_int32_t d)
+{
+	u_int32_t q = 0;
+	int32_t r = 0;
+
+	for(int k=15; k>=0; --k){
+		if (r >= 0)
+			r = ((r<<2) | ((d >> 30) & 3)) - ((q<<2) | 1);
+		else
+			r = ((r<<2) | ((d >> 30) & 3)) + ((q<<2) | 3);
+		d <<= 2;
 
 		q = (q<<1) | (r >= 0);
 	}
@@ -95,16 +113,20 @@ int main(int argc, char **argv)
 		nr_loops = atoi(argv[3]);
 	}
 
-	printf("Type: %s\n", test_or_bench == 0 ? "test" : "benchmark");
-	printf("Algo: %s\n", hamster_or_fpga == 0 ? "hamster" : "fpga");
+	printf("Type: %d - %s\n", test_or_bench, test_or_bench == 0 ? "test" : "benchmark");
+	printf("Algo: %d - %s\n", hamster_or_fpga, hamster_or_fpga == 0 ? "hamster" : "fpga");
 	printf("Nr loops: %d\n", nr_loops);
 
 	if (test_or_bench == 0){
-		int result = test(nr_loops, hamster_or_fpga==0 ? hamster_sqrt : fpga_sqrt);
+		int result = test(nr_loops, hamster_or_fpga==0 ? hamster_sqrt   : 
+								    hamster_or_fpga==1 ? fpga_sqrt_rev1 : 
+													     fpga_sqrt_rev2 );
 		printf("test: %d", result);
 	}
 	else{
-		bench(nr_loops, 10000, hamster_or_fpga==0 ? hamster_sqrt :  fpga_sqrt);
+		bench(nr_loops, 10000, hamster_or_fpga==0 ? hamster_sqrt   :  
+						       hamster_or_fpga==1 ? fpga_sqrt_rev1 :
+							   						fpga_sqrt_rev2 );
 	}
 }
 
