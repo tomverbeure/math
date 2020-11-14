@@ -65,14 +65,12 @@ int bench(int nr_loops, int buf_size, u_int32_t (*sqrt)(u_int32_t))
 	return result;
 }
 
-int test(int nr_loops, u_int32_t (*sqrt)(u_int32_t))
+int test(int nr_loops, u_int32_t (*dut_sqrt)(u_int32_t))
 {
 	for(int i=0; i<nr_loops; ++i){
-		u_int32_t op;
-
-		op = rand() & 0xffffffff;
+		u_int32_t op = rand() & 0xfffffff;
 		u_int32_t result_ref = (u_int32_t)sqrt(op);
-		u_int32_t result_dut = sqrt(op);
+		u_int32_t result_dut = dut_sqrt(op);
 
 		if (result_ref != result_dut){
 			printf("op (%d): ref (%d) != dut (%d)\n", op, result_ref, result_dut);
@@ -101,9 +99,12 @@ int main(int argc, char **argv)
 	printf("Algo: %s\n", hamster_or_fpga == 0 ? "hamster" : "fpga");
 	printf("Nr loops: %d\n", nr_loops);
 
-	if (test_or_bench == 0)
-		test(nr_loops, hamster_or_fpga==0 ? hamster_sqrt : fpga_sqrt);
-	else
+	if (test_or_bench == 0){
+		int result = test(nr_loops, hamster_or_fpga==0 ? hamster_sqrt : fpga_sqrt);
+		printf("test: %d", result);
+	}
+	else{
 		bench(nr_loops, 10000, hamster_or_fpga==0 ? hamster_sqrt :  fpga_sqrt);
+	}
 }
 
