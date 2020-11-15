@@ -10,6 +10,8 @@ echo
 time ./sqrt 1 1 10000
 echo
 time ./sqrt 1 2 10000
+echo
+time ./sqrt 1 3 10000
 
 echo
 echo ===================================
@@ -22,6 +24,8 @@ echo
 time ./sqrt 1 1 10000
 echo
 time ./sqrt 1 2 10000
+echo
+time ./sqrt 1 3 10000
 
 
 echo
@@ -35,6 +39,8 @@ echo
 time ./sqrt 1 1 10000
 echo
 time ./sqrt 1 2 10000
+echo
+time ./sqrt 1 3 10000
 
 echo
 echo ===================================
@@ -47,6 +53,8 @@ echo
 time ./sqrt 1 1 10000
 echo
 time ./sqrt 1 2 10000
+echo
+time ./sqrt 1 3 10000
 
 echo
 echo ===================================
@@ -59,6 +67,8 @@ echo
 time ./sqrt 1 1 10000
 echo
 time ./sqrt 1 2 10000
+echo
+time ./sqrt 1 3 10000
 
 
 echo
@@ -72,5 +82,7 @@ echo
 time ./sqrt 1 1 10000
 echo
 time ./sqrt 1 2 10000
+echo
+time ./sqrt 1 3 10000
 
 echo

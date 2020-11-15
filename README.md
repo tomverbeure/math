@@ -205,9 +205,13 @@ Non-goals:
 
     Does *not* use a lookup table or multiplier, just a bunch of adders.
 
+	[Parallel-Array Implementations of A Non-Restoring Square Root Algorithm](https://yamin.cis.k.hosei.ac.jp/papers/ICCD97.pdf)
+
 * [An Optimized Square Root Algorithm for Implementation in FPGA Hardware](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.174.6832&rep=rep1&type=pdf)
 
     Seems to be equivalent to the previous one.
+
+* [An Efficient Implementation of the Non Restoring Square Root Algorithm in Gate Level](http://www.ijcte.org/papers/281-G850.pdf)
 
 * [Reciprocation, Square root, Inverse Square Root, and some Elementary Functions using Small Multipliers](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.30.7789&rep=rep1&type=pdf)
 
