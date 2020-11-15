@@ -92,7 +92,6 @@ u_int32_t sqrt_yamin_tom(u_int32_t d)
 u_int32_t sqrt_sutikno(u_int32_t d)
 {
 	u_int32_t q = 0;
-	u_int32_t qint = 0;
 	int32_t r = 0;
 	int32_t remain = 0;
 
@@ -105,12 +104,12 @@ u_int32_t sqrt_sutikno(u_int32_t d)
 			r = (r<<2) | ((d >> (2*k)) & 3);
 		}
 
-		q = (qint<<2) | 1;
-		remain = r - q;
-		qint = (qint<<1) | (remain>=0);
+		u_int32_t q_guess = (q<<2) | 1;
+		remain = r - q_guess;
+		q = (q<<1) | (remain>=0);
 	}
 
-	return qint;
+	return q;
 }
 
 int bench(int nr_loops, int buf_size, u_int32_t (*sqrt)(u_int32_t))
