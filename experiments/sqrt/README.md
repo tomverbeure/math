@@ -2,17 +2,25 @@
 # Integer SQRT Comparison
 
 In [this tweet](https://twitter.com/field_hamster/status/1326800952586874883), Michael Field
-(aka [@field_hamaster](https://twitter.com/field_hamster)), showed an integer square root
+(aka [@field_hamster](https://twitter.com/field_hamster)), showed an integer square root
 algorithm that can easily be converted to an interative or pipelined FPGA implementation.
 
-As part of the ray tracing project, I had a look at square root algorithms as well, and
-stumbled onto one that might even require less hardware.
+Back when I was working on my [ray tracing project](https://tomverbeure.github.io/rtl/2018/11/26/Racing-the-Beam-Ray-Tracer.html), 
+I had a look at square root algorithms as well, and stumbled onto one that might even require less hardware.
 
 See ["Implementation of Single Precision Floating Point Square Root on FPGAs"](https://yamin.cis.k.hosei.ac.jp/papers/FCCM97.pdf).
 
-I decided a quick comparison between the 2 algorithms when implemented in C.
+I decided to do a quick comparison between the 2 algorithms when implemented in C.
 
 `./run.sh` will do a bunch of runs for various GCC and CLANG parameters.
+
+In general, Michael's version is always ~25% faster. I think that this is because it uses
+operations that map naturally onto a CPU ALU operations. The FPGA optimized version
+relies more on bit manipulation.
+
+The [Godbolt Compiler Explorer versions of the code](https://godbolt.org/z/aejjnh). 
+
+I suspect that in hardware, Michael's version will require more logic.
 
 Here are the results on my brand new AMD 5600X system:
 
