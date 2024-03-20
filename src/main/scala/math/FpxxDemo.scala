@@ -74,12 +74,12 @@ class FpxxDemo extends Component {
         io.op_a_p_op_b     := RegNext(add.io.result).toVec()
 
         val mul = new FpxxMul(config, FpxxMulConfig(pipeStages = 5))
-        mul.io.op_vld :=    RegNext(io.op_vld)
-        mul.io.op_a.fromVec(RegNext(io.op_a))
-        mul.io.op_b.fromVec(RegNext(io.op_b))
+        mul.io.input.valid :=    RegNext(io.op_vld)
+        mul.io.input.a.fromVec(RegNext(io.op_a))
+        mul.io.input.b.fromVec(RegNext(io.op_b))
 
-        io.op_a_mul_op_b_vld := RegNext(mul.io.result_vld)
-        io.op_a_mul_op_b     := RegNext(mul.io.result).toVec()
+        io.op_a_mul_op_b_vld := RegNext(mul.io.result.valid)
+        io.op_a_mul_op_b     := RegNext(mul.io.result.payload).toVec()
 
         val div = new FpxxDiv(config, FpxxDivConfig(pipeStages = 4, tableSizeBits = -1))
         div.io.op_vld :=    RegNext(io.op_vld)

@@ -3,7 +3,7 @@ package math
 
 object FpxxTesterSupport {
 
-    def printAll(opA: Float, opB: Float, expected: Float, actual: Float) {
+    def printAll(opA: Float, opB: Float, expected: Float, actual: Float) = {
         printf("op A:     ")
         Fp32.print(opA)
         printf("\n")
@@ -22,7 +22,7 @@ object FpxxTesterSupport {
         printf("\n")
     }
 
-    def printAll(op: Float, expected: Float, actual: Float) {
+    def printAll(op: Float, expected: Float, actual: Float) = {
         printf("op:       ")
         Fp32.print(op)
         printf("\n")

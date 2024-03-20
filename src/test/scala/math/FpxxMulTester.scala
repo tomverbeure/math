@@ -21,13 +21,13 @@ object FpxxMulTester {
             val result      = out(Bits(config.full_size bits))
         }
 
-        val fp_op = new FpxxMul(config, FpxxMulConfig(pipeStages = 5))
-        fp_op.io.op_vld :=    RegNext(io.op_vld) init(False)
-        fp_op.io.op_a.fromVec(RegNext(io.op_a))
-        fp_op.io.op_b.fromVec(RegNext(io.op_b))
+        val fp_op = new FpxxMul(config, FpxxMulConfig(pipeStages = 2))
+        fp_op.io.input.valid :=    RegNext(io.op_vld) init(False)
+        fp_op.io.input.payload.a.fromVec(RegNext(io.op_a))
+        fp_op.io.input.payload.b.fromVec(RegNext(io.op_b))
 
-        io.result_vld := RegNext(fp_op.io.result_vld) init(False)
-        io.result     := RegNext(fp_op.io.result).toVec()
+        io.result_vld := RegNext(fp_op.io.result.valid) init(False)
+        io.result     := RegNext(fp_op.io.result.payload).toVec()
     }
 }
 
