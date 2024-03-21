@@ -16,6 +16,7 @@ class FpxxMul(c: FpxxConfig, mulConfig: FpxxMulConfig = FpxxMulConfig()) extends
     def pipeStages      = mulConfig.pipeStages
     def hwMul           = mulConfig.hwMul
 
+    assert(c.ieee_like, "Can only handle IEEE compliant floats")
     assert(0 <= pipeStages && pipeStages <= 2, "Multiplier supports 0, 1 or 2 stage pipeline")
 
     val io = new Bundle {
@@ -32,8 +33,8 @@ class FpxxMul(c: FpxxConfig, mulConfig: FpxxMulConfig = FpxxMulConfig()) extends
         val a = insert(io.input.payload.a)
         val b = insert(io.input.payload.b)
         val is_nan = insert(a.is_nan() || b.is_nan())
-        val a_is_zero = insert(a.is_zero())
-        val b_is_zero = insert(b.is_zero())
+        val a_is_zero = insert(a.is_zero() || a.is_subnormal())
+        val b_is_zero = insert(b.is_zero() || b.is_subnormal())
         val is_zero = insert(a_is_zero || b_is_zero)
 
         val mant_a = insert(U(1, 1 bits) @@ a.mant)

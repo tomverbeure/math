@@ -12,6 +12,7 @@ case class FpxxAddConfig(
 
 class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = null) extends Component {
 
+    assert(c.ieee_like, "Can only handle IEEE compliant floats")
     def pipeStages      = if (addConfig == null) 1 else addConfig.pipeStages
 
     val io = new Bundle {
@@ -27,8 +28,8 @@ class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = null) extends Component 
     val op_a_p0 = io.op_a
     val op_b_p0 = io.op_b
 
-    val op_a_is_zero_p0 = op_a_p0.is_zero()
-    val op_b_is_zero_p0 = op_b_p0.is_zero()
+    val op_a_is_zero_p0 = op_a_p0.is_zero() || op_a_p0.is_subnormal()
+    val op_b_is_zero_p0 = op_b_p0.is_zero() || op_b_p0.is_subnormal()
 
     val op_a_is_inf_p0 = op_a_p0.is_infinite()
     val op_b_is_inf_p0 = op_b_p0.is_infinite()

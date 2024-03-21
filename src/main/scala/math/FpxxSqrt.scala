@@ -12,6 +12,7 @@ case class FpxxSqrtConfig(
 
 class FpxxSqrt(c: FpxxConfig, sqrtConfig: FpxxSqrtConfig = null) extends Component {
 
+    assert(c.ieee_like, "Can only handle IEEE compliant floats")
     def pipeStages      = if (sqrtConfig == null) 0 else sqrtConfig.pipeStages
     def lutMantBits     = if (sqrtConfig == null || sqrtConfig.lutMantBits < 0)   c.mant_size   else sqrtConfig.lutMantBits
     def tableSizeBits   = if (sqrtConfig == null || sqrtConfig.tableSizeBits < 0) c.mant_size/2 else sqrtConfig.tableSizeBits
@@ -52,7 +53,7 @@ class FpxxSqrt(c: FpxxConfig, sqrtConfig: FpxxSqrtConfig = null) extends Compone
 
     //============================================================
 
-    val op_zero_p0 = op_p0.is_zero()
+    val op_zero_p0 = op_p0.is_zero() || op_p0.is_subnormal()
     val op_nan_p0  = op_p0.is_nan() || op_p0.sign
     val op_inf_p0  = op_p0.is_infinite() && !op_p0.sign
 

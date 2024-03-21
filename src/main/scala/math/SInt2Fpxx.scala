@@ -5,6 +5,7 @@ import spinal.core._
 
 class SInt2Fpxx(intNrBits: Int, c: FpxxConfig) extends Component {
 
+    assert(c.ieee_like, "Can only handle IEEE compliant floats")
     def pipeStages      = 2
 
     val io = new Bundle {
