@@ -75,6 +75,26 @@ object Fp32 {
 
 }
 
+/* Converts a float given as bits in a BigInt to a hexadecimal representation. */
+object FloatHexString {
+    def apply(value: BigInt, config: FpxxConfig) = {
+        val bias = config.bias
+        val exponentWidth = config.exp_size
+        val mantissaWidth = config.mant_size
+        val sign = (value >> (exponentWidth + mantissaWidth)) & 1
+        val exponent_bits = (value >> mantissaWidth) & ((1 << exponentWidth) - 1)
+        val mantissa = value & ((1 << mantissaWidth) - 1)
+        // align to 4 bit boundary
+        val mantissa_aligned = mantissa << (4 - (mantissaWidth % 4))
+        val mantissa_str = mantissa_aligned.toString(16)
+        val mantissa_str_padded = mantissa_str.reverse.padTo((mantissaWidth + 3) / 4, '0').reverse
+        val leading = if (exponent_bits == 0) "0" else "1"
+        val exponent_centered = if (exponent_bits == 0) 1 - bias else exponent_bits.toInt - bias
+        val signStr = if (sign == 1) "-" else ""
+        f"$signStr$leading%s.${mantissa_str_padded}p$exponent_centered%d"
+    }
+}
+
 object Fp64 {
 
     def exp_bits    = 11
