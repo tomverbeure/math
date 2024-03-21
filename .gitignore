@@ -41,3 +41,4 @@ bin/
 !tester/src/test/resources/*.vhd
 simWorkspace
 
+*~

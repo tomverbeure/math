@@ -8,10 +8,10 @@ sealed trait InfinityEncoding {
     def isInfinity(value: Fpxx): Bool
     def assignInfinity(value: Fpxx)
 };
-case class NoInfinity(largest: BigInt) extends InfinityEncoding {
+case class NoInfinity(replaceWith: BigInt) extends InfinityEncoding {
     def isInfinity(value: Fpxx): Bool = False
     def assignInfinity(value: Fpxx): Unit = {
-        value.assignFromBits(largest, value.asBits.getWidth - 2, 0)
+        value.assignFromBits(replaceWith)
     }
 };
 case class IEEEInfinity() extends InfinityEncoding {
@@ -60,7 +60,8 @@ object FpxxConfig {
     def float16() = FpxxConfig(5, 10)
     def bfloat16() = FpxxConfig(8, 7)
     def float8_e5m2fnuz() = FpxxConfig(5, 2, SpecialNan(BigInt("10000000", 2)),
-        inf_encoding = NoInfinity((1 << 8) - 1), exp_bias = CustomBias(16))
+        inf_encoding = NoInfinity(BigInt("10000000", 2)), exp_bias = CustomBias(16),
+        signed_zero = false)
 }
 
 case class FpxxConfig(
@@ -68,14 +69,15 @@ case class FpxxConfig(
                 mant_size   : Int,
     		nan_encoding: NanEncoding = IEEENan(),
     		inf_encoding: InfinityEncoding = IEEEInfinity(),
-    		exp_bias: Bias = IEEEBias()
+    exp_bias: Bias = IEEEBias(),
+    signed_zero: Boolean = true
 ) {
 
     def full_size = 1 + exp_size + mant_size
 
     def bias = exp_bias(exp_size)
 
-    def ieee_like = nan_encoding.isInstanceOf[IEEENan] && inf_encoding.isInstanceOf[IEEEInfinity] && exp_bias.isInstanceOf[IEEEBias]
+    def ieee_like = nan_encoding.isInstanceOf[IEEENan] && inf_encoding.isInstanceOf[IEEEInfinity] && exp_bias.isInstanceOf[IEEEBias] && signed_zero
 }
 
 
@@ -114,6 +116,7 @@ case class Fpxx(c: FpxxConfig) extends Bundle {
     }
 
     def set_zero() = {
+        if (!c.signed_zero) sign := False
         exp     := 0
         mant    := 0
     }
