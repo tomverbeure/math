@@ -19,19 +19,17 @@ class FpxxSqrt(c: FpxxConfig, sqrtConfig: FpxxSqrtConfig = null) extends Compone
     def tableSize       = (1<<tableSizeBits)-(1<<(tableSizeBits-2))
 
     def sqrtTableContents = for(i <- 0 until tableSize) yield {
+        // For implicit conversion between Double and FpxxHost
+        import math.FpxxHost._
 
         // Values in range (0.5, 2.0(
         val fin     = ((1L<<(tableSizeBits-2)) + i).toDouble / (1L<<(tableSizeBits-1)).toDouble;
         val fout    = scala.math.sqrt(fin)
 
-        val fin_exp     = Fp64.exp(fin)
-        val fout_exp    = Fp64.exp(fout)
-        var fout_mant   = Fp64.mant(fout)
+        val shift = fin.exp - fout.exp
 
-        val shift = fin_exp - fout_exp
-
-        val round = (fout_mant >> (Fp64.mant_bits-lutMantBits+1)) & 1
-        fout_mant = (fout_mant >> (Fp64.mant_bits-lutMantBits)) + round
+        val round = (fout.mant >> (fout.c.mant_size-lutMantBits+1)) & 1
+        val fout_mant = (fout.mant >> (fout.c.mant_size-lutMantBits)) + round
 
         // printf("Sqrt table: %d: %10f -> %10f : %08x\n", i, fin, fout, fout_mant)
 

@@ -26,11 +26,11 @@ object FpxxMulTester {
 
         val fp_op = new FpxxMul(inConfig, Some(outConfig), mulConfig = FpxxMulConfig(pipeStages = 2))
         fp_op.io.input.valid :=    RegNext(io.op.valid) init(False)
-        fp_op.io.input.payload.a.fromVec(RegNext(io.op.payload.a))
-        fp_op.io.input.payload.b.fromVec(RegNext(io.op.payload.b))
+        fp_op.io.input.payload.a.assignFromBits(RegNext(io.op.payload.a))
+        fp_op.io.input.payload.b.assignFromBits(RegNext(io.op.payload.b))
 
         io.result.valid := RegNext(fp_op.io.result.valid) init(False)
-        io.result.payload     := RegNext(fp_op.io.result.payload).toVec()
+        io.result.payload     := RegNext(fp_op.io.result.payload).asBits
     }
 }
 

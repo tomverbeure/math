@@ -27,13 +27,13 @@ object SInt2FpxxTester {
         u_sint2fpxx_8.io.op     := RegNext(io.op_a.asSInt) init(0)
 
         io.result_vld := RegNext(u_sint2fpxx_8.io.result_vld) init(False)
-        io.result_a   := RegNext(u_sint2fpxx_8.io.result).toVec()
+        io.result_a   := RegNext(u_sint2fpxx_8.io.result).asBits
 
         val u_sint2fpxx_28 = new SInt2Fpxx(28, config)
         u_sint2fpxx_28.io.op_vld := RegNext(io.op_vld) init(False)
         u_sint2fpxx_28.io.op     := RegNext(io.op_b.asSInt) init(0)
 
-        io.result_b   := RegNext(u_sint2fpxx_28.io.result).toVec()
+        io.result_b   := RegNext(u_sint2fpxx_28.io.result).asBits
     }
 }
 

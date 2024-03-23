@@ -22,15 +22,14 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
     def tableSize       = 1<< tableSizeBits
 
     def divTableContents = for(i <- 0 until tableSize) yield {
+        // For implicit conversion between Double and FpxxHost
+        import math.FpxxHost._
+
         val fin     = 1.0 + i.toDouble / tableSize
         val fout    = 1.0 / (fin * fin)
 
-        val fin_exp     = Fp64.exp(fin)
-        val fout_exp    = Fp64.exp(fout)
-        var fout_mant   = Fp64.mant(fout)
-
-        val round = (fout_mant >> (Fp64.mant_bits-lutMantBits+1)) & 1
-        fout_mant = (fout_mant >> (Fp64.mant_bits-lutMantBits)) + round
+        val round = (fout.mant >> (fout.c.mant_size-lutMantBits+1)) & 1
+        val fout_mant = (fout.mant >> (fout.c.mant_size-lutMantBits)) + round
 
         U(fout_mant, lutMantBits bits)
     }

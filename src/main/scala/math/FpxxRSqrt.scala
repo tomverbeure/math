@@ -19,19 +19,17 @@ class FpxxRSqrt(c: FpxxConfig, rsqrtConfig: FpxxRSqrtConfig = null) extends Comp
     def tableSize       = (1<<tableSizeBits)-(1<<(tableSizeBits-2))
 
     def rsqrtTableContents = for(i <- 0 until tableSize) yield {
+        // For implicit conversion between Double and FpxxHost
+        import math.FpxxHost._
 
         // Values in range (0.5, 2.0(
         val fin     = ((1L<<(tableSizeBits-2)) + i).toDouble / (1L<<(tableSizeBits-1)).toDouble;
         val fout    = 1.0 / scala.math.sqrt(fin)
 
-        val fin_exp     = Fp64.exp(fin)
-        val fout_exp    = Fp64.exp(fout)
-        var fout_mant   = Fp64.mant(fout)
+        val shift = if (fin.exp - fout.exp > 0) 1 else 0
 
-        val shift = if (fin_exp - fout_exp > 0) 1 else 0
-
-        val round = (fout_mant >> (Fp64.mant_bits-lutMantBits+1)) & 1
-        fout_mant = (fout_mant >> (Fp64.mant_bits-lutMantBits)) + round
+        val round = (fout.mant >> (fout.c.mant_size -lutMantBits+1)) & 1
+        val fout_mant = (fout.mant >> (fout.c.mant_size-lutMantBits)) + round
 
         // printf("RSqrt table: %d: %10f -> %10f : %08x, %d, %d\n", i, fin, fout, fout_mant, (fin_exp-fout_exp), shift)
 

@@ -22,10 +22,10 @@ object FpxxSqrtTester {
 
         val fp_op = new FpxxSqrt(config, FpxxSqrtConfig(pipeStages = 5) )
         fp_op.io.op_vld :=    RegNext(io.op_vld) init(False)
-        fp_op.io.op.fromVec(RegNext(io.op))
+        fp_op.io.op.assignFromBits(RegNext(io.op))
 
         io.result_vld := RegNext(fp_op.io.result_vld) init(False)
-        io.result     := RegNext(fp_op.io.result).toVec()
+        io.result     := RegNext(fp_op.io.result).asBits
     }
 }
 
