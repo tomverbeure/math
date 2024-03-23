@@ -148,6 +148,13 @@ case class Fpxx(c: FpxxConfig) extends Bundle {
         this.exp.assignBigInt(value.exp)
         this.mant.assignBigInt(value.mant)
     }
+
+    def unary_~() = {
+        val neg = Fpxx(c)
+        neg := this
+        neg.sign := !sign
+        neg
+    }
 }
 
 object FpxxHost {
