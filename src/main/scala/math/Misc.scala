@@ -2,6 +2,10 @@
 package math
 
 import spinal.core._
+import spinal.core.sim._
+
+import scala.collection.mutable
+import spinal.lib.sim.Phase
 
 object Fp32 {
 
@@ -144,4 +148,63 @@ object OptPipe {
 object OptPipeInit {
     def apply[T <: Data](that : T, init: T, ena: Bool, pipeline : Boolean) : T = if (pipeline) RegNextWhen(that, ena) init(init) else that
     def apply[T <: Data](that : T, init: T, pipeline : Boolean) : T = apply(that, init, True, pipeline)
+}
+
+case class ScoreboardInOrder[T]() {
+    val dut = mutable.Queue[T]()
+    val ref = mutable.Queue[(T, Any)]()
+    var matches = 0
+
+    if (Phase.isUsed) {
+        Phase.check {
+            checkEmptyness()
+        }
+    }
+
+    def pushDut(that: T): Unit = {
+        dut.enqueue(that)
+        check()
+    }
+
+    def pushRef(that: T, inputs: Any = null): Unit = {
+        ref.enqueue((that, inputs))
+        check()
+    }
+
+    def compare(ref: T, dut: T) = !(ref != dut)
+
+    def check(): Unit = {
+        if (ref.nonEmpty && dut.nonEmpty) {
+            val dutHead = dut.dequeue()
+            val (refHead, inputs) = ref.dequeue()
+            if (!compare(refHead, dutHead)) {
+                println("Transaction mismatch :")
+                if (inputs != null) {
+                    println("Inputs :")
+                    println(inputs)
+                }
+                println("REF :")
+                println(refHead)
+                println("DUT :")
+                println(dutHead)
+                simFailure()
+            }
+            matches += 1
+        }
+    }
+
+    def checkEmptyness(): Unit = {
+        if (dut.nonEmpty || ref.nonEmpty) {
+            if (dut.nonEmpty) {
+                println("Unmatched DUT transaction : \n")
+                dut.foreach(d => println(d))
+            }
+
+            if (ref.nonEmpty) {
+                println("Unmatched reference transaction :\n")
+                ref.foreach(d => println(d))
+            }
+            if (Phase.isUsed) Phase.check.onEnd(simFailure()) else simFailure()
+        }
+    }
 }

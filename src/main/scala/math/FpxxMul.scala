@@ -11,20 +11,22 @@ case class FpxxMulConfig(
     ){
 }
 
-class FpxxMul(c: FpxxConfig, mulConfig: FpxxMulConfig = FpxxMulConfig()) extends Component {
+case class FpxxMul(cIn: FpxxConfig, cOut: Option[FpxxConfig] = None, mulConfig: FpxxMulConfig = FpxxMulConfig()) extends Component {
 
+    val cOutU = cOut getOrElse cIn
     def pipeStages      = mulConfig.pipeStages
     def hwMul           = mulConfig.hwMul
 
-    assert(c.ieee_like, "Can only handle IEEE compliant floats")
     assert(0 <= pipeStages && pipeStages <= 2, "Multiplier supports 0, 1 or 2 stage pipeline")
+    assert(cIn.ieee_like && cOutU.ieee_like, "Can only handle IEEE compliant floats")
+    assert(cIn.exp_size == cOutU.exp_size, "Can only handle equal input and output exponents")
 
     val io = new Bundle {
         val input = slave Flow(new Bundle {
-            val a = Fpxx(c)
-            val b = Fpxx(c)
+            val a = Fpxx(cIn)
+            val b = Fpxx(cIn)
         })
-        val result = master Flow(Fpxx(c))
+        val result = master Flow(Fpxx(cOutU))
     }
 
     val n0 = new Node {
@@ -43,37 +45,33 @@ class FpxxMul(c: FpxxConfig, mulConfig: FpxxMulConfig = FpxxMulConfig()) extends
     }
 
     val n1 = new Node {
-        val exp_mul = insert(n0.a.exp.resize(c.exp_size + 2).asSInt + n0.b.exp.resize(c.exp_size+2).asSInt - S(c.bias, c.exp_size+2 bits))
-        val mant_mul = insert(n0.mant_a * n0.mant_b) >> c.mant_size
+        val exp_mul = insert((n0.a.exp +^ n0.b.exp).intoSInt - cIn.bias)
+        val mant_mul = insert(n0.mant_a * n0.mant_b)
     }
 
     val n2 = new Node {
         arbitrateTo(io.result)
 
-        val mant_mul_adj = n1.mant_mul |>> n1.mant_mul.msb.asUInt.resize(c.mant_size+1)
-        val exp_mul_adj = n1.exp_mul + n1.mant_mul.msb.asUInt.resize(2).asSInt
+        val mant_mul_adj = ((n1.mant_mul @@ U(0, 1 bit) |>> n1.mant_mul.msb.asUInt)
+            @@ U(0, (cOutU.mant_size - n1.mant_mul.getWidth + 1).max(0) bits))
+            .reversed.apply(2, cOutU.mant_size bits).reversed
+        val exp_mul_adj = n1.exp_mul + n1.mant_mul.msb.asUInt.intoSInt
 
         val result = io.result.payload
 
+        result.sign   := n0.sign_mul
         when(n0.is_nan) {
-            result.sign := False
-            result.exp.setAll
-            result.mant := (c.mant_size-1 -> True, default -> False)
+            result.set_nan()
         }
         .elsewhen(n0.is_zero || exp_mul_adj <= 0){
-            result.sign   := False
-            result.exp.clearAll
-            result.mant.clearAll
+            result.set_zero()
         }
         .elsewhen(exp_mul_adj >= 255){
-            result.sign   := n0.sign_mul
-            result.exp.setAll
-            result.mant.clearAll
+            result.set_inf()
         }
         .otherwise{
-            result.sign   := n0.sign_mul
-            result.exp    := exp_mul_adj.resize(c.exp_size).asUInt
-            result.mant   := mant_mul_adj.resize(c.mant_size)
+            result.exp    := exp_mul_adj.asUInt.resized
+            result.mant   := mant_mul_adj.resized
         }
     }
 

@@ -8,26 +8,29 @@ import math.FpxxTesterSupport._
 import spinal.sim._
 import spinal.core._
 import spinal.core.sim._
+import spinal.lib._
+import spinal.lib.sim.FlowDriver
+import spinal.lib.sim.FlowMonitor
 
 object FpxxMulTester {
 
-    class FpxxMulDut(config: FpxxConfig) extends Component {
+    class FpxxMulDut(inConfig: FpxxConfig, outConfig: FpxxConfig) extends Component {
         val io = new Bundle {
-            val op_vld      = in(Bool)
-            val op_a        = in(Bits(config.full_size bits))
-            val op_b        = in(Bits(config.full_size bits))
+            val op = slave Flow(new Bundle {
+                val a = Bits(inConfig.full_size bits)
+                val b = Bits(inConfig.full_size bits)
+            })
 
-            val result_vld  = out(Bool)
-            val result      = out(Bits(config.full_size bits))
+            val result      = master Flow(Bits(outConfig.full_size bits))
         }
 
-        val fp_op = new FpxxMul(config, FpxxMulConfig(pipeStages = 2))
-        fp_op.io.input.valid :=    RegNext(io.op_vld) init(False)
-        fp_op.io.input.payload.a.fromVec(RegNext(io.op_a))
-        fp_op.io.input.payload.b.fromVec(RegNext(io.op_b))
+        val fp_op = new FpxxMul(inConfig, Some(outConfig), mulConfig = FpxxMulConfig(pipeStages = 2))
+        fp_op.io.input.valid :=    RegNext(io.op.valid) init(False)
+        fp_op.io.input.payload.a.fromVec(RegNext(io.op.payload.a))
+        fp_op.io.input.payload.b.fromVec(RegNext(io.op.payload.b))
 
-        io.result_vld := RegNext(fp_op.io.result.valid) init(False)
-        io.result     := RegNext(fp_op.io.result.payload).toVec()
+        io.result.valid := RegNext(fp_op.io.result.valid) init(False)
+        io.result.payload     := RegNext(fp_op.io.result.payload).toVec()
     }
 }
 
@@ -70,13 +73,13 @@ class FpxxMulTester extends AnyFunSuite {
         var compiled = SimConfig
 //            .withWave
             .allOptimisation
-            .compile(new FpxxMulTester.FpxxMulDut(config))
+            .compile(new FpxxMulTester.FpxxMulDut(config, config))
 
         compiled.doSim { dut =>
 
             dut.clockDomain.forkStimulus(period = 10)
             dut.clockDomain.forkSimSpeedPrinter(0.2)
-            dut.io.op_vld #= false
+            dut.io.op.valid #= false
             dut.clockDomain.waitSampling()
 
             val stimuli = FpxxTesterSupport.directedStimuli
@@ -105,19 +108,19 @@ class FpxxMulTester extends AnyFunSuite {
                 var op_b_long : Long = Fp32.asBits(op_b)
 
                 // Apply operands
-                dut.io.op_vld #= true
-                dut.io.op_a   #= op_a_long
-                dut.io.op_b   #= op_b_long
+                dut.io.op.valid #= true
+                dut.io.op.a   #= op_a_long
+                dut.io.op.b   #= op_b_long
                 dut.clockDomain.waitSampling(1)
-                dut.io.op_vld #= false
+                dut.io.op.valid #= false
 
                 // Wait until result appears
-                while(!dut.io.result_vld.toBoolean){
+                while(!dut.io.result.valid.toBoolean){
                     dut.clockDomain.waitSampling()
                 }
 
                 // Actual result
-                val result_act = Fp32.asFloat(dut.io.result.toLong.toInt)
+                val result_act = Fp32.asFloat(dut.io.result.payload.toLong.toInt)
 
                 dut.clockDomain.waitSampling()
 
@@ -136,6 +139,58 @@ class FpxxMulTester extends AnyFunSuite {
                 i+=1
             }
 
+        }
+    }
+
+    test("float8e5m2_fnuz -> e8 -> bfloat16 multiplication") {
+        val inConfig = FpxxConfig.float8_e5m2fnuz()
+        val outConfig = FpxxConfig.bfloat16()
+
+        SimConfig.withFstWave.compile(new Module {
+            val input = slave Flow(new Bundle {
+                val a = Fpxx(inConfig)
+                val b = Fpxx(inConfig)
+            })
+            val result = master Flow(Fpxx(outConfig))
+
+            val aConv = FpxxConverter(inConfig, FpxxConfig(8, 2))
+            val bConv = FpxxConverter(inConfig, FpxxConfig(8, 2))
+            aConv.io.a := input.a
+            bConv.io.a := input.b
+
+            val mult = FpxxMul(FpxxConfig(8, 2), Some(outConfig), mulConfig = FpxxMulConfig(pipeStages = 0))
+            mult.io.input.payload.a := aConv.io.r
+            mult.io.input.payload.b := bConv.io.r
+            mult.io.input.valid := input.valid
+
+            mult.io.result >> result
+        }).doSim{dut =>
+            SimTimeout(10000000)
+            val scoreboard = ScoreboardInOrder[FpxxHost]
+            val source = scala.io.Source.fromFile("testcases/mul_float8_e5m2fnuz_to_bfloat16.txt")
+            val cases = source.getLines().map(l => l.split(" ")).map(_.toList).map {
+                case a :: b :: expected :: _ => {
+                    val (aB, bB, eB) = (BigInt(a, 16), BigInt(b, 16), BigInt(expected, 16))
+                    (FpxxHost(aB, inConfig), FpxxHost(bB, inConfig), FpxxHost(eB, outConfig))
+                }
+            }
+
+            FlowDriver(dut.input, dut.clockDomain) { payload =>
+                if (!cases.isEmpty) {
+                    val (a, b, expected) = cases.next()
+                    payload.a #= a
+                    payload.b #= b
+                    scoreboard.pushRef(expected, (a, b))
+                    true
+                } else false
+            }
+
+            FlowMonitor(dut.result, dut.clockDomain) { payload =>
+                scoreboard.pushDut(payload.toHost())
+            }
+
+            dut.clockDomain.forkStimulus(2)
+            dut.clockDomain.waitActiveEdgeWhere(cases.isEmpty && scoreboard.ref.isEmpty)
         }
     }
 
