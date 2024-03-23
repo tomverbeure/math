@@ -2,57 +2,20 @@
 package math
 
 import spinal.core._
+import spinal.core.sim._
 
 
-sealed trait InfinityEncoding {
-    def isInfinity(value: Fpxx): Bool
-    def assignInfinity(value: Fpxx)
-};
-case class NoInfinity(replaceWith: BigInt) extends InfinityEncoding {
-    def isInfinity(value: Fpxx): Bool = False
-    def assignInfinity(value: Fpxx): Unit = {
-        value.assignFromBits(replaceWith)
-    }
-};
-case class IEEEInfinity() extends InfinityEncoding {
-    def isInfinity(value: Fpxx): Bool = value.exp.andR && !value.mant.orR
-    def assignInfinity(value: Fpxx): Unit = {
-        value.exp.setAll()
-        value.mant := U(0)
-    }
-};
+sealed trait InfinityEncoding;
+case class NoInfinity(replaceWith: BigInt) extends InfinityEncoding;
+case class IEEEInfinity() extends InfinityEncoding;
 
-sealed trait NanEncoding {
-    def isNaN(value: Fpxx): Bool
-    def assignNan(value: Fpxx)
-};
+sealed trait NanEncoding;
+case class IEEENan() extends NanEncoding;
+case class SpecialNan(encoding: BigInt) extends NanEncoding;
 
-case class IEEENan() extends NanEncoding {
-    def isNaN(value: Fpxx): Bool = value.exp.andR && value.mant.orR
-    def assignNan(value: Fpxx) = {
-        value.exp.setAll()
-        value.mant.setAll()
-    }
-};
-
-case class SpecialNan(encoding: BigInt) extends NanEncoding {
-    def isNaN(value: Fpxx): Bool = value.asBits.asUInt === U(encoding)
-    def assignNan(value: Fpxx) = {
-        value.assignFromBits(B(encoding))
-    }
-};
-
-sealed trait Bias {
-    def apply(exp_size: Int): Int
-}
-
-case class IEEEBias() extends Bias {
-    def apply(exp_size: Int) = (1<<(exp_size-1))-1
-}
-
-case class CustomBias(bias: Int) extends Bias {
-    def apply(exp_size: Int) = bias
-}
+sealed trait Bias;
+case class IEEEBias() extends Bias;
+case class CustomBias(bias: Int) extends Bias;
 
 object FpxxConfig {
     def float64() = FpxxConfig(11, 53)
@@ -75,7 +38,10 @@ case class FpxxConfig(
 
     def full_size = 1 + exp_size + mant_size
 
-    def bias = exp_bias(exp_size)
+    def bias = exp_bias match {
+        case CustomBias(bias) => bias
+        case IEEEBias() => (1<<(exp_size-1))-1
+    }
 
     def ieee_like = nan_encoding.isInstanceOf[IEEENan] && inf_encoding.isInstanceOf[IEEEInfinity] && exp_bias.isInstanceOf[IEEEBias] && signed_zero
 }
@@ -96,11 +62,17 @@ case class Fpxx(c: FpxxConfig) extends Bundle {
     }
 
     def is_nan(): Bool = {
-        c.nan_encoding.isNaN(this)
+        c.nan_encoding match {
+            case IEEENan() => this.exp.andR && this.mant.orR
+            case SpecialNan(encoding) => this.asBits.asUInt === U(encoding)
+        }
     }
 
     def is_infinite(): Bool = {
-        c.inf_encoding.isInfinity(this)
+        c.inf_encoding match {
+            case IEEEInfinity() => this.exp.andR && !this.mant.orR
+            case NoInfinity(replaceWith) => False
+        }
     }
 
     def is_subnormal(): Bool = {
@@ -108,11 +80,26 @@ case class Fpxx(c: FpxxConfig) extends Bundle {
     }
 
     def set_nan() = {
-        c.nan_encoding.assignNan(this)
+        c.nan_encoding match {
+            case IEEENan() => {
+                this.exp.setAll()
+                this.mant.setAll()
+            }
+            case SpecialNan(encoding) =>
+                this.assignFromBits(B(encoding))
+        }
     }
 
     def set_inf() = {
-        c.inf_encoding.assignInfinity(this)
+        c.inf_encoding match {
+            case IEEEInfinity() => {
+                this.exp.setAll()
+                this.mant := U(0)
+            }
+            case NoInfinity(replaceWith) => {
+                this.assignFromBits(replaceWith)
+            }
+        }
     }
 
     def set_zero() = {
@@ -164,5 +151,65 @@ case class Fpxx(c: FpxxConfig) extends Bundle {
         mant init(0)
         this
     }
+
+    def toHost() : FpxxHost = {
+        val value = (this.sign.toBigInt << c.exp_size + c.mant_size) |
+            (this.exp.toBigInt << c.mant_size) | this.mant.toBigInt
+        FpxxHost(value, c)
+    }
+
+    def #=(value: FpxxHost) = {
+        assert(value.c == c, "Cannot assign unless configuration is equal")
+        this.sign.assignBigInt(value.sign)
+        this.exp.assignBigInt(value.exp)
+        this.mant.assignBigInt(value.mant)
+    }
 }
 
+
+// Used on simulator side
+case class FpxxHost(value: BigInt, c: FpxxConfig) {
+    val exp_mask: BigInt = (1 << c.exp_size) - 1
+    val mant_mask: BigInt = (1 << c.mant_size) - 1
+
+    def sign = value >> (c.exp_size + c.mant_size)
+    def exp = (value >> c.mant_size) & exp_mask
+    def mant = value & mant_mask
+
+    def isDenormal = exp == 0 && mant != 0
+
+    def isZero = exp == 0 && mant == 0
+
+    def isNaN = c.nan_encoding match {
+        case IEEENan() => exp == exp_mask && mant != 0
+        case SpecialNan(encoding) => value == encoding
+    }
+
+    def isInfinite = c.inf_encoding match {
+        case IEEEInfinity() => exp == 0 && mant == 0
+        case NoInfinity(_) => false
+    }
+
+    override def toString = {
+        // align to 4 bit boundary
+        val mantissa_aligned = mant << (4 - (c.mant_size % 4))
+        val mantissa_str = mantissa_aligned.toString(16)
+        val mantissa_str_padded = mantissa_str.reverse.padTo((c.mant_size + 3) / 4, '0').reverse
+        val leading = if (exp == 0) "0" else "1"
+        val exponent_centered = if (exp == 0) 1 - c.bias else exp.toInt - c.bias
+        val signStr = if (sign == 1) "-" else ""
+        val str = if (isNaN) "NaN" else if (isInfinite) f"${signStr}inf" else {
+            f"$signStr$leading%s.${mantissa_str_padded}p$exponent_centered%d"
+        }
+        f"$str(0x${value.toString(16)})"
+    }
+
+    override def equals(other: Any): Boolean = {
+        other match {
+            case o @ FpxxHost(ov, oc) => c == oc && (ov == value ||
+                    isNaN && o.isNaN ||
+                    isInfinite && o.isInfinite && sign == o.sign)
+            case _ => false
+        }
+    }
+}

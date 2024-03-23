@@ -17,44 +17,30 @@ class FpxxConverterTester extends AnyFunSuite {
       SimConfig
           .withFstWave
           .noOptimisation
-          .compile(new Module {
-              val input = in(Bits(inConfig.full_size bits))
-              val output = out(Bits(outConfig.full_size bits))
-              val expected = in(Bits(outConfig.full_size bits))
-
-              val conv = FpxxConverter(inConfig, outConfig)
-              conv.io.a.assignFromBits(input)
-        
-              output := conv.io.r.asBits
-
-              val expected_fpxx = Fpxx(outConfig)
-              expected_fpxx.assignFromBits(expected)
-
-              val bothNan = out(Bool())
-              bothNan := conv.io.r.is_nan && expected_fpxx.is_nan()
-              val bothInf = out(Bool())
-              bothInf := expected_fpxx.is_infinite && conv.io.r.is_infinite && expected_fpxx.sign === conv.io.r.sign
-          })
+          .compile(FpxxConverter(inConfig, outConfig))
           .doSim { dut =>
               dut.clockDomain.forkStimulus(period = 10)
 
               val cases = testFile.getLines().map(l => l.split(" ")).map(_.toList).map {
                   case in :: expected :: _ => {
-                      (BigInt(in, 16), BigInt(expected, 16))
+                      val (iB, eB) = (BigInt(in, 16), BigInt(expected, 16))
+                      (FpxxHost(iB, inConfig), FpxxHost(eB, outConfig))
                   }
               }
               for ((in, expected) <- cases) {
-                  dut.input #= in
-                  dut.expected #= expected
+                  dut.io.a #= in
+                  dut.io.r #= expected
                   dut.clockDomain.waitRisingEdge()
-                  val out = dut.output.toBigInt
-                  val inputStr = FloatHexString(in, inConfig)
-                  val expectedStr = FloatHexString(expected, outConfig)
-                  val outStr = FloatHexString(out, outConfig)
-                  val str = s"\nin\t\tout\t\texpected\n" +
-                  s"${inputStr}\t${outStr}\t${expectedStr}\n" +
-                  f"${in.toString(16)}\t\t${out.toString(16)}\t\t${expected.toString(16)}"
-                  assert((dut.output.toBigInt == expected) || dut.bothInf.toBoolean || dut.bothNan.toBoolean, str)
+                  val out = dut.io.r.toHost()
+                  if (dut.io.r.toHost() != expected) {
+                      println("in:")
+                      println(in)
+                      println("expected:")
+                      println(expected)
+                      println("out:")
+                      println(out)
+                      simFailure()
+                  }
               }
           }
   }
