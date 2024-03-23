@@ -2,6 +2,7 @@
 package math
 
 import spinal.core._
+import spinal.lib._
 
 // Doesn't support: denormals, rounding, and correct signed zeros
 
@@ -16,17 +17,16 @@ class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = null) extends Component 
     def pipeStages      = if (addConfig == null) 1 else addConfig.pipeStages
 
     val io = new Bundle {
-        val op_vld      = in(Bool)
-        val op_a        = in(Fpxx(c))
-        val op_b        = in(Fpxx(c))
-
-        val result_vld  = out(Bool)
-        val result      = out(Fpxx(c))
+        val op = slave Flow(new Bundle {
+            val a = Fpxx(c)
+            val b = Fpxx(c)
+        })
+        val result = master Flow(Fpxx(c))
     }
 
-    val p0_vld  = io.op_vld
-    val op_a_p0 = io.op_a
-    val op_b_p0 = io.op_b
+    val p0_vld  = io.op.valid
+    val op_a_p0 = io.op.a
+    val op_b_p0 = io.op.b
 
     val op_a_is_zero_p0 = op_a_p0.is_zero() || op_a_p0.is_subnormal()
     val op_b_is_zero_p0 = op_b_p0.is_zero() || op_b_p0.is_subnormal()
@@ -235,7 +235,7 @@ class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = null) extends Component 
         mant_final_p5   := (!exp_add_m_lz.msb && !exp_eq_lz) ? (mant_add_p5 |<< lz_p5) | 0
     }
 
-    io.result_vld   := p5_vld
+    io.result.valid   := p5_vld
     io.result.sign  := sign_final_p5
     io.result.exp   := exp_final_p5
     io.result.mant  := mant_final_p5.resize(c.mant_size)
@@ -245,24 +245,22 @@ class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = null) extends Component 
 class FpxxSub(c: FpxxConfig, addConfig: FpxxAddConfig) extends Component {
 
     val io = new Bundle {
-        val op_vld      = in(Bool)
-        val op_a        = in(Fpxx(c))
-        val op_b        = in(Fpxx(c))
-
-        val result_vld  = out(Bool)
-        val result      = out(Fpxx(c))
+        val op = slave Flow(new Bundle {
+            val a = Fpxx(c)
+            val b = Fpxx(c)
+        })
+        val result = master Flow(Fpxx(c))
     }
 
     val op_b = Fpxx(c)
-    op_b.sign   := !io.op_b.sign
-    op_b.exp    := io.op_b.exp
-    op_b.mant   := io.op_b.mant
+    op_b.sign   := !io.op.b.sign
+    op_b.exp    := io.op.b.exp
+    op_b.mant   := io.op.b.mant
 
     val u_add = new FpxxAdd(c, addConfig)
-    u_add.io.op_vld     <> io.op_vld
-    u_add.io.op_a       <> io.op_a
-    u_add.io.op_b       <> op_b
+    u_add.io.op.valid     <> io.op.valid
+    u_add.io.op.a       <> io.op.a
+    u_add.io.op.b       <> op_b
 
-    u_add.io.result_vld <> io.result_vld
     u_add.io.result     <> io.result
 }
