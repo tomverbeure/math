@@ -1,7 +1,6 @@
-
 package math
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 import math.FpxxTesterSupport._
 
@@ -29,7 +28,7 @@ object IntSqrtTester {
     }
 }
 
-class IntSqrtTester extends FunSuite {
+class IntSqrtTester extends AnyFunSuite {
 
     test("IntSqrt") {
 

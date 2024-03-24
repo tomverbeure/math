@@ -1,7 +1,7 @@
 
 package math
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 import spinal.sim._
 import spinal.core._
@@ -20,7 +20,7 @@ object LeadingZerosTester {
 
 }
 
-class LeadingZerosTester extends FunSuite {
+class LeadingZerosTester extends AnyFunSuite {
 
     test("LeadingZeros") { 
 

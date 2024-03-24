@@ -1,7 +1,7 @@
 
 package math
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 import math.FpxxTesterSupport._
 
@@ -29,7 +29,7 @@ object Fpxx2SIntTester {
     }
 }
 
-class Fpxx2SIntTester extends FunSuite {
+class Fpxx2SIntTester extends AnyFunSuite {
 
     test("Fpxx2SInt") {
 
