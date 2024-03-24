@@ -168,7 +168,7 @@ object FpxxHost {
 }
 
 // Used on simulator side
-case class FpxxHost(value: BigInt, c: FpxxConfig) {
+case class FpxxHost(value: BigInt, c: FpxxConfig, maxMantDiff: Int = 0) {
     val exp_mask: BigInt = (BigInt(1) << c.exp_size) - 1
     val mant_mask: BigInt = (BigInt(1) << c.mant_size) - 1
 
@@ -206,7 +206,8 @@ case class FpxxHost(value: BigInt, c: FpxxConfig) {
 
     override def equals(other: Any): Boolean = {
         other match {
-            case o @ FpxxHost(ov, oc) => c == oc && (ov == value ||
+            case o @ FpxxHost(_, oc, _) => c == oc &&
+                ((o.mant - mant).abs <= maxMantDiff && o.exp == exp && o.sign == sign||
                     isNan && o.isNan ||
                     isInf && o.isInf && sign == o.sign)
             case _ => false
