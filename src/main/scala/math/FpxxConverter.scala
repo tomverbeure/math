@@ -1,6 +1,7 @@
 package math
 
 import spinal.core._
+import spinal.lib._
 
 /* Converts from one Fpxx format to another
  */
@@ -9,9 +10,11 @@ case class FpxxConverter(
     out_config: FpxxConfig
 ) extends Module {
     val io = new Bundle {
-        val a = in(Fpxx(in_config))
-        val r = out(Fpxx(out_config))
+        val a = slave Flow(Fpxx(in_config))
+        val r = master Flow(Fpxx(out_config))
     }
+
+    io.r.valid := io.a.valid
 
     // If the result exponent is too small to hold a's denormals, then we don't need to measure the
     // input's leading zeroes

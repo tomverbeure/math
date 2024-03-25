@@ -155,8 +155,10 @@ class FpxxMulTester extends AnyFunSuite {
 
             val aConv = FpxxConverter(inConfig, FpxxConfig(8, 2))
             val bConv = FpxxConverter(inConfig, FpxxConfig(8, 2))
-            aConv.io.a := input.a
-            bConv.io.a := input.b
+            aConv.io.a.payload := input.a
+            aConv.io.a.valid := True
+            bConv.io.a.payload := input.b
+            bConv.io.a.valid := True
 
             val mult = FpxxMul(FpxxConfig(8, 2), Some(outConfig), mulConfig = FpxxMulConfig(pipeStages = 0))
             mult.io.input.payload.a := aConv.io.r
