@@ -169,7 +169,7 @@ object FpxxHost {
 }
 
 // Used on simulator side
-case class FpxxHost(value: BigInt, c: FpxxConfig, maxMantDiff: Int = 0) {
+case class FpxxHost(value: BigInt, c: FpxxConfig, maxUlpDist: Int = 0) {
     val exp_mask: BigInt = (BigInt(1) << c.exp_size) - 1
     val mant_mask: BigInt = (BigInt(1) << c.mant_size) - 1
 
@@ -191,6 +191,11 @@ case class FpxxHost(value: BigInt, c: FpxxConfig, maxMantDiff: Int = 0) {
         case NoInfinity(_) => false
     }
 
+    def ulpDist(other: FpxxHost) = {
+        require(c == other.c)
+        (value - other.value).abs
+    }
+
     override def toString = {
         // align to 4 bit boundary
         val mantissa_aligned = mant << (4 - (c.mant_size % 4))
@@ -208,7 +213,7 @@ case class FpxxHost(value: BigInt, c: FpxxConfig, maxMantDiff: Int = 0) {
     override def equals(other: Any): Boolean = {
         other match {
             case o @ FpxxHost(_, oc, _) => c == oc &&
-                ((o.mant - mant).abs <= maxMantDiff && o.exp == exp && o.sign == sign||
+                (ulpDist(o) <= maxUlpDist ||
                     isNan && o.isNan ||
                     isInf && o.isInf && sign == o.sign)
             case _ => false
