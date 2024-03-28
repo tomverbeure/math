@@ -187,7 +187,7 @@ case class FpxxHost(value: BigInt, c: FpxxConfig, maxMantDiff: Int = 0) {
     }
 
     def isInf = c.inf_encoding match {
-        case IEEEInfinity() => exp == 0 && mant == 0
+        case IEEEInfinity() => exp == exp_mask && mant == 0
         case NoInfinity(_) => false
     }
 
