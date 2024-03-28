@@ -150,8 +150,9 @@ case class Fpxx(c: FpxxConfig) extends Bundle {
     }
 
     def unary_~() = {
-        val neg = Fpxx(c)
-        neg := this
+        val neg = cloneOf(this)
+        neg.exp := exp
+        neg.mant := mant
         neg.sign := !sign
         neg
     }
