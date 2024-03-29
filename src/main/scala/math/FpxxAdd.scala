@@ -1,266 +1,177 @@
-
 package math
 
 import spinal.core._
 import spinal.lib._
+import spinal.lib.misc.pipeline._
 
 // Doesn't support: denormals, rounding, and correct signed zeros
 
 case class FpxxAddConfig(
-    pipeStages      : Int = 1
-    ){
-}
+    pipeStages: Int = 1
+) {}
 
 class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = null) extends Component {
 
     assert(c.ieee_like, "Can only handle IEEE compliant floats")
-    def pipeStages      = if (addConfig == null) 1 else addConfig.pipeStages
+    def pipeStages = if (addConfig == null) 1 else addConfig.pipeStages
 
     val io = new Bundle {
-        val op = slave Flow(new Bundle {
+        val op = slave Flow (new Bundle {
             val a = Fpxx(c)
             val b = Fpxx(c)
         })
-        val result = master Flow(Fpxx(c))
+        val result = master Flow (Fpxx(c))
     }
 
-    val p0_vld  = io.op.valid
-    val op_a_p0 = io.op.a
-    val op_b_p0 = io.op.b
+    val n0 = new Node {
+        arbitrateFrom(io.op)
+        val a = insert(io.op.a)
+        val b = insert(io.op.b)
 
-    val op_a_is_zero_p0 = op_a_p0.is_zero() || op_a_p0.is_subnormal()
-    val op_b_is_zero_p0 = op_b_p0.is_zero() || op_b_p0.is_subnormal()
+        val a_is_zero = insert(a.is_zero() || a.is_subnormal())
+        val b_is_zero = insert(b.is_zero() || b.is_subnormal())
 
-    val op_a_is_inf_p0 = op_a_p0.is_infinite()
-    val op_b_is_inf_p0 = op_b_p0.is_infinite()
+        val a_is_inf = insert(a.is_infinite())
+        val b_is_inf = insert(b.is_infinite())
 
-    val op_is_zero_p0       = op_a_is_zero_p0 || op_b_is_zero_p0
-    val op_is_nan_p0        = op_a_p0.is_nan() || op_b_p0.is_nan() || (op_a_is_inf_p0 && op_b_is_inf_p0 && op_a_p0.sign =/= op_b_p0.sign)
-    val op_is_inf_p0        = (op_a_is_inf_p0 || op_b_is_inf_p0)
+        val is_zero = insert(a_is_zero || b_is_zero)
+        val is_nan  = insert(a.is_nan() || b.is_nan || a_is_inf && b_is_inf && a.sign =/= b.sign)
+        val is_inf  = insert(a_is_inf || b_is_inf)
 
-    val mant_a_p0 = op_a_p0.full_mant()
-    val mant_b_p0 = op_b_p0.full_mant()
+        val mant_a = a_is_zero.mux(U(0), a.full_mant())
+        val mant_b = b_is_zero.mux(U(0), b.full_mant())
 
-    when(op_a_is_zero_p0){
-        mant_a_p0.clearAll
+        val exp_diff_a_b = a.exp.resize(c.exp_size + 1).asSInt - b.exp.resize(c.exp_size + 1).asSInt
+        val exp_diff_b_a = b.exp - a.exp
+
+        val a_geq_b = exp_diff_a_b >= 0
+
+        val sign_a_swap   = insert(a_geq_b.mux(a.sign, b.sign))
+        val sign_b_swap   = insert(a_geq_b.mux(b.sign, a.sign))
+        val exp_add       = insert(a_geq_b.mux(a.exp, b.exp))
+        val exp_diff_ovfl = insert(a_geq_b.mux(exp_diff_a_b > c.mant_size, exp_diff_b_a > c.mant_size))
+        val exp_diff      = insert(a_geq_b.mux(exp_diff_a_b.asUInt, exp_diff_b_a).resize(log2Up(c.mant_size)))
+        val mant_a_swap   = insert(a_geq_b.mux(mant_a, mant_b))
+        val mant_b_swap   = insert(a_geq_b.mux(mant_b, mant_a))
+
     }
 
-    when(op_b_is_zero_p0){
-        mant_b_p0.clearAll
+    val n1 = new Node {
+        val mant_a_adj = insert(n0.mant_a_swap.resize(c.mant_size + 2))
+        val mant_b_adj = insert(n0.exp_diff_ovfl ? U(0) | (n0.mant_b_swap |>> n0.exp_diff).resize(c.mant_size + 2))
     }
 
-    val exp_diff_a_b_p0 = SInt(c.exp_size+1 bits)
-    val exp_diff_b_a_p0 = UInt(c.exp_size   bits)
+    val n2 = new Node {
+        val _sign_add                        = Bool
+        val _mant_a_opt_inv, _mant_b_opt_inv = UInt(c.mant_size + 3 bits)
 
-    exp_diff_a_b_p0 := op_a_p0.exp.resize(c.exp_size+1).asSInt - op_b_p0.exp.resize(c.exp_size+1).asSInt
-    exp_diff_b_a_p0 := op_b_p0.exp - op_a_p0.exp
+        when(n0.sign_a_swap === n0.sign_b_swap) {
+            _sign_add       := n0.sign_a_swap
+            _mant_a_opt_inv := n1.mant_a_adj @@ False
+            _mant_b_opt_inv := n1.mant_b_adj @@ False
+        }
+            .elsewhen(n1.mant_a_adj >= n1.mant_b_adj) {
+                _sign_add       := n0.sign_a_swap
+                _mant_a_opt_inv := n1.mant_a_adj @@ True
+                _mant_b_opt_inv := ~n1.mant_b_adj @@ True
+            }
+            .otherwise {
+                _sign_add       := n0.sign_b_swap
+                _mant_a_opt_inv := ~n1.mant_a_adj @@ True
+                _mant_b_opt_inv := n1.mant_b_adj @@ True
+            }
 
-    val sign_a_swap_p0   = Bool
-    val sign_b_swap_p0   = Bool
-    val exp_diff_ovfl_p0 = Bool
-    val exp_diff_p0      = UInt(log2Up(c.mant_size) bits)
-    val exp_add_p0       = UInt(c.exp_size bits)
-    val mant_a_swap_p0   = UInt(c.mant_size+1 bits)
-    val mant_b_swap_p0   = UInt(c.mant_size+1 bits)
-
-
-    when(exp_diff_a_b_p0 >= 0){
-        sign_a_swap_p0   := op_a_p0.sign
-        sign_b_swap_p0   := op_b_p0.sign
-        exp_add_p0       := op_a_p0.exp
-        exp_diff_ovfl_p0 := exp_diff_a_b_p0 > c.mant_size
-        exp_diff_p0      := exp_diff_a_b_p0.resize(log2Up(c.mant_size)).asUInt
-        mant_a_swap_p0   := mant_a_p0
-        mant_b_swap_p0   := mant_b_p0
-    }
-    .otherwise{
-        sign_a_swap_p0   := op_b_p0.sign
-        sign_b_swap_p0   := op_a_p0.sign
-        exp_add_p0       := op_b_p0.exp
-        exp_diff_ovfl_p0 := exp_diff_b_a_p0 > c.mant_size
-        exp_diff_p0      := exp_diff_b_a_p0.resize(log2Up(c.mant_size))
-        mant_a_swap_p0   := mant_b_p0
-        mant_b_swap_p0   := mant_a_p0
+        val sign_add       = insert(_sign_add)
+        val mant_a_opt_inv = insert(_mant_a_opt_inv)
+        val mant_b_opt_inv = insert(_mant_b_opt_inv)
     }
 
-    //============================================================
-
-    val p1_pipe_ena = pipeStages >= 3
-
-    val p1_vld          = OptPipeInit(p0_vld, False,       p1_pipe_ena)
-    val op_is_zero_p1   = OptPipe(op_is_zero_p0,   p0_vld, p1_pipe_ena)
-    val op_is_nan_p1    = OptPipe(op_is_nan_p0,    p0_vld, p1_pipe_ena)
-    val op_is_inf_p1    = OptPipe(op_is_inf_p0,    p0_vld, p1_pipe_ena)
-    val sign_a_p1       = OptPipe(sign_a_swap_p0,  p0_vld, p1_pipe_ena)
-    val sign_b_p1       = OptPipe(sign_b_swap_p0,  p0_vld, p1_pipe_ena)
-    val exp_add_p1      = OptPipe(exp_add_p0,      p0_vld, p1_pipe_ena)
-    val exp_diff_ovfl_p1= OptPipe(exp_diff_ovfl_p0,p0_vld, p1_pipe_ena)
-    val exp_diff_p1     = OptPipe(exp_diff_p0,     p0_vld, p1_pipe_ena)
-    val mant_a_p1       = OptPipe(mant_a_swap_p0,  p0_vld, p1_pipe_ena)
-    val mant_b_p1       = OptPipe(mant_b_swap_p0,  p0_vld, p1_pipe_ena)
-
-    //============================================================
-
-    val mant_a_adj_p1 = UInt(c.mant_size+2 bits)
-    val mant_b_adj_p1 = UInt(c.mant_size+2 bits)
-
-    mant_a_adj_p1  := mant_a_p1.resize(c.mant_size+2);
-    mant_b_adj_p1  := exp_diff_ovfl_p1 ? U(0, c.mant_size+2 bits) | (mant_b_p1 |>> exp_diff_p1).resize(c.mant_size+2)
-
-    //============================================================
-
-    val p2_pipe_ena = pipeStages >= 1
-
-    val p2_vld        = OptPipeInit(p1_vld, False,     p2_pipe_ena)
-    val op_is_zero_p2 = OptPipe(op_is_zero_p1, p1_vld, p2_pipe_ena)
-    val op_is_nan_p2  = OptPipe(op_is_nan_p1,  p1_vld, p2_pipe_ena)
-    val op_is_inf_p2  = OptPipe(op_is_inf_p1,  p1_vld, p2_pipe_ena)
-    val sign_a_p2     = OptPipe(sign_a_p1,     p1_vld, p2_pipe_ena)
-    val sign_b_p2     = OptPipe(sign_b_p1,     p1_vld, p2_pipe_ena)
-    val exp_add_p2    = OptPipe(exp_add_p1,    p1_vld, p2_pipe_ena)
-    val mant_a_adj_p2 = OptPipe(mant_a_adj_p1, p1_vld, p2_pipe_ena)
-    val mant_b_adj_p2 = OptPipe(mant_b_adj_p1, p1_vld, p2_pipe_ena)
-
-    //============================================================
-
-    val sign_add_p2 = Bool
-
-    val mant_a_opt_inv_p2 = UInt(c.mant_size+3 bits)
-    val mant_b_opt_inv_p2 = UInt(c.mant_size+3 bits)
-
-    when(sign_a_p2 === sign_b_p2){
-        sign_add_p2       := sign_a_p2
-        mant_a_opt_inv_p2 := mant_a_adj_p2 @@ False
-        mant_b_opt_inv_p2 := mant_b_adj_p2 @@ False
-    }
-    .elsewhen(mant_a_adj_p2 >= mant_b_adj_p2){
-        sign_add_p2       := sign_a_p2
-        mant_a_opt_inv_p2 :=  mant_a_adj_p2 @@ True
-        mant_b_opt_inv_p2 := ~mant_b_adj_p2 @@ True
-    }
-    .otherwise{
-        sign_add_p2       := sign_b_p2
-        mant_a_opt_inv_p2 := ~mant_a_adj_p2 @@ True
-        mant_b_opt_inv_p2 :=  mant_b_adj_p2 @@ True
+    val n3 = new Node {
+        val mant_add = insert((n2.mant_a_opt_inv + n2.mant_b_opt_inv)(1, c.mant_size + 2 bits))
     }
 
-    //============================================================
+    val n4 = new Node {
+        // Doing leading zeros detection on the output of the adder adds directly to the critical path, or
+        // requires an additional pipeline stage. An alternative is to do leading zeros anticipation (LZA)
+        // and do it in parallel with the addition, but that's not done here.
+        val _lz = n0.is_zero ? U(0) | LeadingZeros(n3.mant_add.resize(c.mant_size + 1).asBits)
 
-    val p3_pipe_ena = pipeStages >= 4
+        val _exp_add_adj  = UInt(c.exp_size bits)
+        val _mant_add_adj = UInt(c.mant_size + 1 bits)
 
-    val p3_vld            = OptPipeInit(p2_vld, False,         p3_pipe_ena)
-    val op_is_zero_p3     = OptPipe(op_is_zero_p2,     p2_vld, p3_pipe_ena)
-    val op_is_nan_p3      = OptPipe(op_is_nan_p2,      p2_vld, p3_pipe_ena)
-    val op_is_inf_p3      = OptPipe(op_is_inf_p2,      p2_vld, p3_pipe_ena)
-    val sign_add_p3       = OptPipe(sign_add_p2,       p2_vld, p3_pipe_ena)
-    val exp_add_p3        = OptPipe(exp_add_p2,        p2_vld, p3_pipe_ena)
-    val mant_a_opt_inv_p3 = OptPipe(mant_a_opt_inv_p2, p2_vld, p3_pipe_ena)
-    val mant_b_opt_inv_p3 = OptPipe(mant_b_opt_inv_p2, p2_vld, p3_pipe_ena)
+        when(n3.mant_add(c.mant_size + 1)) {
+            _mant_add_adj := n3.mant_add >> 1
+            _exp_add_adj  := n0.exp_add + 1
+            _lz.clearAll
+        }
+            .otherwise {
+                _mant_add_adj := n3.mant_add.resize(c.mant_size + 1)
+                _exp_add_adj  := n0.exp_add
+            }
 
-    //============================================================
-
-    val mant_add_p3 = (mant_a_opt_inv_p3 + mant_b_opt_inv_p3)(1, c.mant_size+2 bits)
-
-    //============================================================
-
-    val p4_pipe_ena = pipeStages >= 2
-
-    val p4_vld        = OptPipeInit(p3_vld, False,     p4_pipe_ena)
-    val op_is_zero_p4 = OptPipe(op_is_zero_p3, p3_vld, p4_pipe_ena)
-    val op_is_nan_p4  = OptPipe(op_is_nan_p3,  p3_vld, p4_pipe_ena)
-    val op_is_inf_p4  = OptPipe(op_is_inf_p3,  p3_vld, p4_pipe_ena)
-    val sign_add_p4   = OptPipe(sign_add_p3,   p3_vld, p4_pipe_ena)
-    val exp_add_p4    = OptPipe(exp_add_p3,    p3_vld, p4_pipe_ena)
-    val mant_add_p4   = OptPipe(mant_add_p3,   p3_vld, p4_pipe_ena)
-
-    //============================================================
-
-    // Doing leading zeros detection on the output of the adder adds directly to the critical path, or
-    // requires an additional pipeline stage. An alternative is to do leading zeros anticipation (LZA)
-    // and do it in parallel with the addition, but that's not done here.
-
-    val lz_p4 = LeadingZeros(mant_add_p4.resize(c.mant_size+1).asBits)
-    when(op_is_zero_p4){
-        lz_p4.clearAll
+        val lz           = insert(_lz)
+        val exp_add_adj  = insert(_exp_add_adj)
+        val mant_add_adj = insert(_mant_add_adj)
     }
 
-    val exp_add_adj_p4  = UInt(c.exp_size bits)
-    val mant_add_adj_p4 = UInt(c.mant_size+1 bits)
+    val n5 = new Node {
+        val sign_final = Bool
+        val exp_final  = UInt(c.exp_size bits)
+        val mant_final = UInt(c.mant_size + 1 bits)
 
-    when(mant_add_p4(c.mant_size+1)){
-        mant_add_adj_p4  := mant_add_p4 >> 1
-        exp_add_adj_p4   := exp_add_p4 + 1
-        lz_p4.clearAll
-    }
-    .otherwise{
-        mant_add_adj_p4  := mant_add_p4.resize(c.mant_size+1)
-        exp_add_adj_p4   := exp_add_p4
-    }
+        val exp_add_m_lz = SInt(c.exp_size + 1 bits)
+        exp_add_m_lz := n4.exp_add_adj.resize(c.exp_size + 1).asSInt - n4.lz.resize(c.exp_size + 1).asSInt
 
-    //============================================================
+        val exp_eq_lz = n4.exp_add_adj === n4.lz
 
-    val p5_pipe_ena = pipeStages >= 5
+        when(n0.is_nan) {
+            sign_final := False
+            exp_final.setAll
+            mant_final := (c.mant_size - 1 -> True, default -> False)
+        }.elsewhen(n0.is_inf || n4.exp_add_adj.andR) {
+            sign_final := n2.sign_add
+            exp_final.setAll
+            mant_final.clearAll
+        }.otherwise {
+            sign_final := n2.sign_add
+            exp_final  := ((n4.lz < c.mant_size + 1) && !exp_add_m_lz.msb) ? exp_add_m_lz.asUInt.resize(c.exp_size) | 0
+            mant_final := (!exp_add_m_lz.msb && !exp_eq_lz) ? (n4.mant_add_adj |<< n4.lz) | 0
+        }
 
-    val p5_vld        = OptPipeInit(p4_vld, False,       p5_pipe_ena)
-    val op_is_nan_p5  = OptPipe(op_is_nan_p4,    p4_vld, p5_pipe_ena)
-    val op_is_inf_p5  = OptPipe(op_is_inf_p4,    p4_vld, p5_pipe_ena)
-    val lz_p5         = OptPipe(lz_p4,           p4_vld, p5_pipe_ena)
-    val sign_add_p5   = OptPipe(sign_add_p4,     p4_vld, p5_pipe_ena)
-    val exp_add_p5    = OptPipe(exp_add_adj_p4,  p4_vld, p5_pipe_ena)
-    val mant_add_p5   = OptPipe(mant_add_adj_p4, p4_vld, p5_pipe_ena)
+        io.result.sign := sign_final
+        io.result.exp  := exp_final
+        io.result.mant := mant_final.resize(c.mant_size)
 
-    //============================================================
-
-    val sign_final_p5  = Bool
-    val exp_final_p5   = UInt(c.exp_size bits)
-    val mant_final_p5  = UInt(c.mant_size+1 bits)
-
-    val exp_add_m_lz = SInt(c.exp_size+1 bits)
-    exp_add_m_lz    := exp_add_p5.resize(c.exp_size+1).asSInt - lz_p5.resize(c.exp_size+1).asSInt
-    val exp_eq_lz   = exp_add_p5 === lz_p5
-
-    when(op_is_nan_p5){
-        sign_final_p5   := False
-        exp_final_p5.setAll
-        mant_final_p5   := (c.mant_size-1 -> True, default -> False)
-    }
-    .elsewhen(op_is_inf_p5 || exp_add_p5.andR){
-        sign_final_p5   := sign_add_p5
-        exp_final_p5.setAll
-        mant_final_p5.clearAll
-    }
-    .otherwise{
-        sign_final_p5   := sign_add_p5
-        exp_final_p5    := ((lz_p5 < c.mant_size+1) && !exp_add_m_lz.msb) ? exp_add_m_lz.asUInt.resize(c.exp_size) | 0
-        mant_final_p5   := (!exp_add_m_lz.msb && !exp_eq_lz) ? (mant_add_p5 |<< lz_p5) | 0
+        arbitrateTo(io.result)
     }
 
-    io.result.valid   := p5_vld
-    io.result.sign  := sign_final_p5
-    io.result.exp   := exp_final_p5
-    io.result.mant  := mant_final_p5.resize(c.mant_size)
+    val c01 = if (pipeStages >= 3) StageLink(n0, n1) else DirectLink(n0, n1)
+    val c12 = if (pipeStages >= 1) StageLink(n1, n2) else DirectLink(n1, n2)
+    val c23 = if (pipeStages >= 4) StageLink(n2, n3) else DirectLink(n2, n3)
+    val c34 = if (pipeStages >= 2) StageLink(n3, n4) else DirectLink(n3, n4)
+    val c45 = if (pipeStages >= 5) StageLink(n4, n5) else DirectLink(n4, n5)
+    Builder(c01, c12, c23, c34, c45)
 }
-
 
 class FpxxSub(c: FpxxConfig, addConfig: FpxxAddConfig) extends Component {
 
     val io = new Bundle {
-        val op = slave Flow(new Bundle {
+        val op = slave Flow (new Bundle {
             val a = Fpxx(c)
             val b = Fpxx(c)
         })
-        val result = master Flow(Fpxx(c))
+        val result = master Flow (Fpxx(c))
     }
 
     val op_b = Fpxx(c)
-    op_b.sign   := !io.op.b.sign
-    op_b.exp    := io.op.b.exp
-    op_b.mant   := io.op.b.mant
+    op_b.sign := !io.op.b.sign
+    op_b.exp  := io.op.b.exp
+    op_b.mant := io.op.b.mant
 
     val u_add = new FpxxAdd(c, addConfig)
-    u_add.io.op.valid     <> io.op.valid
-    u_add.io.op.a       <> io.op.a
-    u_add.io.op.b       <> op_b
+    u_add.io.op.valid <> io.op.valid
+    u_add.io.op.a <> io.op.a
+    u_add.io.op.b <> op_b
 
-    u_add.io.result     <> io.result
+    u_add.io.result <> io.result
 }
