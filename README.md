@@ -22,7 +22,7 @@ This library is using SpinalHDL.
 
 If you want to run some of the code here, you first need to install that.
 
-Installation instructions can be found [here](https://spinalhdl.github.io/SpinalDoc-RTD/SpinalHDL/Getting%20Started/getting_started.html#how-to-start-programming-with-spinalhdl).
+Installation instructions can be found [here](https://spinalhdl.github.io/SpinalDoc-RTD/v1.3.8/SpinalHDL/Simulation/install.html).
 
 Once one, run `./run.sh` to generate whichever unit you want to test. Edit this file if you want to run a different test.
 (All of this could be streamlined with a better `Makefile`...)
