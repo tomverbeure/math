@@ -1,7 +1,7 @@
 
 package math
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
 import math.FpxxTesterSupport._
 
@@ -29,7 +29,7 @@ object FpxxSqrtTester {
     }
 }
 
-class FpxxSqrtTester extends FunSuite {
+class FpxxSqrtTester extends AnyFunSuite {
 
     def resultMatches(op: Float, expected: Float, actual: Float, verbose: Boolean = false) : Boolean = {
 

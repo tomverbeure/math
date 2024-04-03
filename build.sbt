@@ -1,16 +1,18 @@
+val spinalVersion = "1.10.1"
+val spinalCore = "com.github.spinalhdl" %% "spinalhdl-core" % spinalVersion
+val spinalLib = "com.github.spinalhdl" %% "spinalhdl-lib" % spinalVersion
+val spinalIdslPlugin = compilerPlugin("com.github.spinalhdl" %% "spinalhdl-idsl-plugin" % spinalVersion)
 
 lazy val root = (project in file(".")).
   settings(
     inThisBuild(List(
       organization := "com.github.spinalhdl",
-      scalaVersion := "2.11.12",
+      scalaVersion := "2.12.18",
       version      := "1.0.0"
     )),
     libraryDependencies ++= Seq(
-        "com.github.spinalhdl" % "spinalhdl-core_2.11" % "1.3.0",
-        "com.github.spinalhdl" % "spinalhdl-lib_2.11"  % "1.3.0",
-        "org.scalatest" % "scalatest_2.11" % "2.2.1",
-        "org.yaml" % "snakeyaml" % "1.8"
+      spinalCore, spinalLib, spinalIdslPlugin,
+      "org.scalatest" %% "scalatest" % "3.2.18" % "test"
     ),
     name := "Fpxx"
   ).dependsOn()
