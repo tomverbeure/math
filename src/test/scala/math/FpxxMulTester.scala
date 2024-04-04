@@ -146,7 +146,7 @@ class FpxxMulTester extends AnyFunSuite {
         val inConfig = FpxxConfig.float8_e5m2fnuz()
         val outConfig = FpxxConfig.bfloat16()
 
-        SimConfig.withFstWave.compile(new Module {
+        SimConfig.withFstWave.compile(BundleDebug.fpxxDebugBits(new Module {
             val input = slave Flow(new Bundle {
                 val a = Fpxx(inConfig)
                 val b = Fpxx(inConfig)
@@ -166,7 +166,7 @@ class FpxxMulTester extends AnyFunSuite {
             mult.io.input.valid := input.valid
 
             mult.io.result >> result
-        }).doSim{dut =>
+        })).doSim{dut =>
             SimTimeout(10000000)
             val scoreboard = ScoreboardInOrder[FpxxHost]
             val source = scala.io.Source.fromFile("testcases/mul_float8_e5m2fnuz_to_bfloat16.txt")

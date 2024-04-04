@@ -113,3 +113,52 @@ case class ScoreboardInOrder[T]() {
         }
     }
 }
+
+/// Credit to Andreas Wallner on the Gitter channel
+object BundleDebug {
+    def apply[T <: Component](top: T, transform: Data => Option[() => Data]): T = {
+        top.walkComponents { c =>
+            val todo = mutable.ArrayBuffer[(Data, () => Data)]()
+            val done = mutable.HashSet[Data]()
+            c.dslBody.walkDeclarations { ds =>
+                def recurse(d: Data): Unit = {
+                    d.refOwner match {
+                        case null =>
+                        case dd: Data =>
+                            if (dd != null && !done.contains(dd)) {
+                                done.add(dd)
+                                transform(dd) match {
+                                    case Some(f) => todo.append((dd, f))
+                                    case None    =>
+                                }
+                                recurse(dd)
+                            }
+                        case _ =>
+                    }
+                }
+
+                ds match {
+                    case d: Data => recurse(d)
+                }
+            }
+            c.rework {
+                todo.foreach { case (dd, f) =>
+                    if (dd.isNamed) {
+                        val signal = f()
+                        signal.setName(dd.getName() + "__debug")
+                    }
+                }
+            }
+        }
+        top
+    }
+
+    /* Adds a debug signal to the DUT which contains the concatenated bits of every Fpxx signal. */
+    def fpxxDebugBits[T <: Component](top: T) = apply(
+      top,
+      {
+          case fpxx: Fpxx => Some(() => fpxx.sign ## fpxx.exp ## fpxx.mant)
+          case _          => None
+      }
+    )
+}
