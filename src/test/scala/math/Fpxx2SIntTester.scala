@@ -22,7 +22,7 @@ object Fpxx2SIntTester {
 
         val u_fpxx2sint_8 = new Fpxx2SInt(16, 12, config)
         u_fpxx2sint_8.io.op_vld := RegNext(io.op_vld) init(False)
-        u_fpxx2sint_8.io.op.fromVec(RegNext(io.op))
+        u_fpxx2sint_8.io.op.assignFromBits(RegNext(io.op))
 
         io.result_vld := RegNext(u_fpxx2sint_8.io.result_vld) init(False)
         io.result     := RegNext(u_fpxx2sint_8.io.result).asBits
@@ -59,6 +59,7 @@ class Fpxx2SIntTester extends AnyFunSuite {
 
                 val op            = input
 
+                import math.FpxxHost._
                 // Convert signed int to positive long
                 var op_long : Long = Fp32.asBits(op.toFloat)
 

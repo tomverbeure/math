@@ -12,25 +12,24 @@ case class FpxxRSqrtConfig(
 
 class FpxxRSqrt(c: FpxxConfig, rsqrtConfig: FpxxRSqrtConfig = null) extends Component {
 
+    assert(c.ieee_like, "Can only handle IEEE compliant floats")
     def pipeStages      = if (rsqrtConfig == null) 0 else rsqrtConfig.pipeStages
     def lutMantBits     = if (rsqrtConfig == null || rsqrtConfig.lutMantBits < 0)   c.mant_size   else rsqrtConfig.lutMantBits
     def tableSizeBits   = if (rsqrtConfig == null || rsqrtConfig.tableSizeBits < 0) c.mant_size/2 else rsqrtConfig.tableSizeBits
     def tableSize       = (1<<tableSizeBits)-(1<<(tableSizeBits-2))
 
     def rsqrtTableContents = for(i <- 0 until tableSize) yield {
+        // For implicit conversion between Double and FpxxHost
+        import math.FpxxHost._
 
         // Values in range (0.5, 2.0(
         val fin     = ((1L<<(tableSizeBits-2)) + i).toDouble / (1L<<(tableSizeBits-1)).toDouble;
         val fout    = 1.0 / scala.math.sqrt(fin)
 
-        val fin_exp     = Fp64.exp(fin)
-        val fout_exp    = Fp64.exp(fout)
-        var fout_mant   = Fp64.mant(fout)
+        val shift = if (fin.exp - fout.exp > 0) 1 else 0
 
-        val shift = if (fin_exp - fout_exp > 0) 1 else 0
-
-        val round = (fout_mant >> (Fp64.mant_bits-lutMantBits+1)) & 1
-        fout_mant = (fout_mant >> (Fp64.mant_bits-lutMantBits)) + round
+        val round = (fout.mant >> (fout.c.mant_size -lutMantBits+1)) & 1
+        val fout_mant = (fout.mant >> (fout.c.mant_size-lutMantBits)) + round
 
         // printf("RSqrt table: %d: %10f -> %10f : %08x, %d, %d\n", i, fin, fout, fout_mant, (fin_exp-fout_exp), shift)
 
@@ -52,7 +51,7 @@ class FpxxRSqrt(c: FpxxConfig, rsqrtConfig: FpxxRSqrtConfig = null) extends Comp
 
     //============================================================
 
-    val op_zero_p0 = op_p0.is_zero()
+    val op_zero_p0 = op_p0.is_zero() || op_p0.is_subnormal()
     val op_nan_p0  = op_p0.is_nan() || op_p0.sign
     val op_inf_p0  = op_p0.is_infinite()
 

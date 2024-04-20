@@ -23,11 +23,11 @@ object FpxxDivTester {
 
         val fp_op = new FpxxDiv(config, FpxxDivConfig(pipeStages = 5) )
         fp_op.io.op_vld :=    RegNext(io.op_vld) init(False)
-        fp_op.io.op_a.fromVec(RegNext(io.op_a))
-        fp_op.io.op_b.fromVec(RegNext(io.op_b))
+        fp_op.io.op_a.assignFromBits(RegNext(io.op_a))
+        fp_op.io.op_b.assignFromBits(RegNext(io.op_b))
 
         io.result_vld := RegNext(fp_op.io.result_vld) init(False)
-        io.result     := RegNext(fp_op.io.result).toVec()
+        io.result     := RegNext(fp_op.io.result).asBits
     }
 }
 

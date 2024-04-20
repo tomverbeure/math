@@ -12,6 +12,7 @@ case class FpxxDivConfig(
 
 class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component {
 
+    assert(c.ieee_like, "Can only handle IEEE compliant floats")
     assert((c.mant_size&1)==1, "FpxxDiv: mantissa must be odd")
 
     def pipeStages      = if (divConfig == null) 0 else divConfig.pipeStages
@@ -21,15 +22,14 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
     def tableSize       = 1<< tableSizeBits
 
     def divTableContents = for(i <- 0 until tableSize) yield {
+        // For implicit conversion between Double and FpxxHost
+        import math.FpxxHost._
+
         val fin     = 1.0 + i.toDouble / tableSize
         val fout    = 1.0 / (fin * fin)
 
-        val fin_exp     = Fp64.exp(fin)
-        val fout_exp    = Fp64.exp(fout)
-        var fout_mant   = Fp64.mant(fout)
-
-        val round = (fout_mant >> (Fp64.mant_bits-lutMantBits+1)) & 1
-        fout_mant = (fout_mant >> (Fp64.mant_bits-lutMantBits)) + round
+        val round = (fout.mant >> (fout.c.mant_size-lutMantBits+1)) & 1
+        val fout_mant = (fout.mant >> (fout.c.mant_size-lutMantBits)) + round
 
         U(fout_mant, lutMantBits bits)
     }
@@ -60,8 +60,8 @@ class FpxxDiv(c: FpxxConfig, divConfig: FpxxDivConfig = null) extends Component 
     val exp_p0      = op_a_p0.exp.resize(c.exp_size+1).asSInt - op_b_p0.exp.resize(c.exp_size+1).asSInt
     val sign_p0     = op_a_p0.sign ^ op_b_p0.sign
 
-    val op_a_zero_p0 = op_a_p0.is_zero()
-    val op_b_zero_p0 = op_b_p0.is_zero()
+    val op_a_zero_p0 = op_a_p0.is_zero() || op_a_p0.is_subnormal()
+    val op_b_zero_p0 = op_b_p0.is_zero() || op_b_p0.is_subnormal()
     val op_a_inf_p0  = op_a_p0.is_infinite()
     val op_b_inf_p0  = op_b_p0.is_infinite()
     val op_nan_p0    = op_a_p0.is_nan() || op_b_p0.is_nan() || (op_a_inf_p0 && op_b_inf_p0)

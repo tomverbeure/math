@@ -5,6 +5,7 @@ import spinal.core._
 
 class Fpxx2SInt(intNrBits: Int, fracNrBits: Int, c: FpxxConfig) extends Component {
     
+    assert(c.ieee_like, "Can only handle IEEE compliant floats")
     assert(intNrBits + fracNrBits + 2 > c.mant_size, "Not enough bits for SInt size")
 
     def pipeStages = 1

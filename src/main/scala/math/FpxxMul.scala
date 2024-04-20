@@ -2,6 +2,8 @@
 package math
 
 import spinal.core._
+import spinal.lib._
+import spinal.lib.misc.pipeline._
 
 case class FpxxMulConfig(
     pipeStages      : Int     = 1,
@@ -9,125 +11,71 @@ case class FpxxMulConfig(
     ){
 }
 
-class FpxxMul(c: FpxxConfig, mulConfig: FpxxMulConfig = null) extends Component {
+case class FpxxMul(cIn: FpxxConfig, cOut: Option[FpxxConfig] = None, mulConfig: FpxxMulConfig = FpxxMulConfig()) extends Component {
 
-    def pipeStages      = if (mulConfig == null) 1     else mulConfig.pipeStages
-    def hwMul           = if (mulConfig == null) false else mulConfig.hwMul
+    val cOutU = cOut getOrElse cIn
+    def pipeStages      = mulConfig.pipeStages
+    def hwMul           = mulConfig.hwMul
+
+    assert(0 <= pipeStages && pipeStages <= 2, "Multiplier supports 0, 1 or 2 stage pipeline")
+    assert(cIn.ieee_like && cOutU.ieee_like, "Can only handle IEEE compliant floats")
+    assert(cIn.exp_size == cOutU.exp_size, "Can only handle equal input and output exponents")
 
     val io = new Bundle {
-        val op_vld      = in(Bool)
-        val op_a        = in(Fpxx(c))
-        val op_b        = in(Fpxx(c))
-
-        val result_vld  = out(Bool)
-        val result      = out(Fpxx(c))
+        val input = slave Flow(new Bundle {
+            val a = Fpxx(cIn)
+            val b = Fpxx(cIn)
+        })
+        val result = master Flow(Fpxx(cOutU))
     }
 
-    val p0_vld  = io.op_vld
-    val op_a_p0 = io.op_a
-    val op_b_p0 = io.op_b
+    val n0 = new Node {
+        arbitrateFrom(io.input)
 
-    val op_is_nan_p0    = op_a_p0.is_nan() || op_b_p0.is_nan()
-    val op_a_is_zero_p0 = op_a_p0.is_zero()
-    val op_b_is_zero_p0 = op_b_p0.is_zero()
-    val op_is_zero_p0   = (op_a_is_zero_p0 || op_b_is_zero_p0) && !op_is_nan_p0
+        val a = insert(io.input.payload.a)
+        val b = insert(io.input.payload.b)
+        val is_nan = insert(a.is_nan() || b.is_nan())
+        val a_is_zero = insert(a.is_zero() || a.is_subnormal())
+        val b_is_zero = insert(b.is_zero() || b.is_subnormal())
+        val is_zero = insert(a_is_zero || b_is_zero)
 
-    val exp_a_p0 = op_a_p0.exp
-    val exp_b_p0 = op_b_p0.exp
-
-    val mant_a_p0 = U(1, 1 bits) @@ op_a_p0.mant
-    val mant_b_p0 = U(1, 1 bits) @@ op_b_p0.mant
-
-    val sign_mul_p0 = op_a_p0.sign ^ op_b_p0.sign
-
-    //============================================================
-
-    val p1_pipe_ena = pipeStages >= 2
-    val p1_vld          = OptPipeInit(p0_vld, False, p1_pipe_ena)
-    val op_is_zero_p1   = OptPipe(op_is_zero_p0,   p0_vld, p1_pipe_ena)
-    val op_is_nan_p1    = OptPipe(op_is_nan_p0,    p0_vld, p1_pipe_ena)
-    val sign_mul_p1     = OptPipe(sign_mul_p0,     p0_vld, p1_pipe_ena)
-    val exp_a_p1        = OptPipe(exp_a_p0,        p0_vld, p1_pipe_ena)
-    val exp_b_p1        = OptPipe(exp_b_p0,        p0_vld, p1_pipe_ena)
-    val mant_a_p1       = if (hwMul) null else OptPipe(mant_a_p0, p0_vld, p1_pipe_ena)
-    val mant_b_p1       = if (hwMul) null else OptPipe(mant_b_p0, p0_vld, p1_pipe_ena)
-
-    //============================================================
-
-    val exp_mul_p1 = SInt(c.exp_size+2 bits)
-
-    exp_mul_p1 := exp_a_p1.resize(c.exp_size+2).asSInt + exp_b_p1.resize(c.exp_size+2).asSInt - S(c.bias, c.exp_size+2 bits)
-
-    val mant_mul_p1 = UInt(c.mant_size+2 bits)
-    if (hwMul){
-        val mul_result = SInt(36 bits)
-
-        val u_mul = new MULT18X18SIO(
-            inputFF     = pipeStages >= 2,          // p1_pipe_ena
-            outputFF    = pipeStages >= 1           // p2_pipe_ena
-            )
-
-        u_mul.io.A      <> mant_a_p0.resize(18).asSInt
-        u_mul.io.B      <> mant_b_p0.resize(18).asSInt
-        u_mul.io.P      <> mul_result
-        u_mul.io.BCIN   <> S(0, 18 bits)
-        u_mul.io.CEA    <> p0_vld
-        u_mul.io.CEB    <> p0_vld
-        u_mul.io.CEP    <> True
-        u_mul.io.RSTA   <> False
-        u_mul.io.RSTB   <> False
-        u_mul.io.RSTP   <> False
-
-        mant_mul_p1 := mul_result.asUInt(c.mant_size, mant_mul_p1.getWidth bits)
-    }
-    else{
-        mant_mul_p1 := (mant_a_p1 * mant_b_p1) >> c.mant_size
+        val mant_a = insert(U(1, 1 bits) @@ a.mant)
+        val mant_b = insert(U(1, 1 bits) @@ b.mant)
+        val sign_mul = insert(a.sign ^ b.sign)
     }
 
-    //============================================================
-    val p2_pipe_ena = pipeStages >= 1
-    val p2_vld          = OptPipeInit(p1_vld, False, p2_pipe_ena)
-    val op_is_zero_p2   = OptPipe(op_is_zero_p1,   p1_vld, p2_pipe_ena)
-    val op_is_nan_p2    = OptPipe(op_is_nan_p1,    p1_vld, p2_pipe_ena)
-    val sign_mul_p2     = OptPipe(sign_mul_p1,     p1_vld, p2_pipe_ena)
-    val exp_mul_p2      = OptPipe(exp_mul_p1,      p1_vld, p2_pipe_ena)
-    val mant_mul_p2     = if (hwMul) mant_mul_p1 else OptPipe(mant_mul_p1,     p1_vld, p2_pipe_ena)
-    //============================================================
-
-    val exp_mul_adj_p2  = SInt(c.exp_size+2 bits)
-    val mant_mul_adj_p2 = UInt(c.mant_size+1 bits)
-
-    mant_mul_adj_p2 := (mant_mul_p2 |>> mant_mul_p2.msb.asUInt).resize(c.mant_size+1)
-    exp_mul_adj_p2  := exp_mul_p2 + mant_mul_p2.msb.asUInt.resize(2).asSInt
-
-    val sign_final_p2 = Bool
-    val exp_final_p2  = UInt(c.exp_size bits)
-    val mant_final_p2 = UInt(c.mant_size bits)
-
-    when(op_is_nan_p2){
-        sign_final_p2   := False
-        exp_final_p2.setAll
-        mant_final_p2   := (c.mant_size-1 -> True, default -> False)
-    }
-    .elsewhen(op_is_zero_p2 || exp_mul_adj_p2 <= 0){
-        sign_final_p2   := False
-        exp_final_p2.clearAll
-        mant_final_p2.clearAll
-    }
-    .elsewhen(exp_mul_adj_p2 >= 255){
-        sign_final_p2   := sign_mul_p2
-        exp_final_p2.setAll
-        mant_final_p2.clearAll
-    }
-    .otherwise{
-        sign_final_p2   := sign_mul_p2
-        exp_final_p2    := exp_mul_adj_p2.resize(c.exp_size).asUInt
-        mant_final_p2   := mant_mul_adj_p2.resize(c.mant_size)
+    val n1 = new Node {
+        val exp_mul = insert((n0.a.exp +^ n0.b.exp).intoSInt - cIn.bias)
+        val mant_mul = insert(n0.mant_a * n0.mant_b)
     }
 
-    io.result_vld   := p2_vld
-    io.result.sign  := sign_final_p2
-    io.result.exp   := exp_final_p2
-    io.result.mant  := mant_final_p2
+    val n2 = new Node {
+        arbitrateTo(io.result)
 
+        val mant_mul_adj = ((n1.mant_mul @@ U(0, 1 bit) |>> n1.mant_mul.msb.asUInt)
+            @@ U(0, (cOutU.mant_size - n1.mant_mul.getWidth + 1).max(0) bits))
+            .reversed.apply(2, cOutU.mant_size bits).reversed
+        val exp_mul_adj = n1.exp_mul + n1.mant_mul.msb.asUInt.intoSInt
+
+        val result = io.result.payload
+
+        result.sign   := n0.sign_mul
+        when(n0.is_nan) {
+            result.set_nan()
+        }
+        .elsewhen(n0.is_zero || exp_mul_adj <= 0){
+            result.set_zero()
+        }
+        .elsewhen(exp_mul_adj >= 255){
+            result.set_inf()
+        }
+        .otherwise{
+            result.exp    := exp_mul_adj.asUInt.resized
+            result.mant   := mant_mul_adj.resized
+        }
+    }
+
+    val c01 = if (pipeStages >= 2) StageLink(n0, n1) else DirectLink(n0, n1)
+    val c12 = if (pipeStages >= 1) StageLink(n1, n2) else DirectLink(n1, n2)
+    Builder(c01, c12)
 }
