@@ -4,17 +4,22 @@ import spinal.core._
 import spinal.lib._
 import spinal.lib.misc.pipeline._
 
-class Fpxx2AFix(intNrBits: BitCount, fracNrBits: BitCount, c: FpxxConfig) extends Component {
+class Fpxx2AFix(
+    intNrBits: BitCount,
+    fracNrBits: BitCount,
+    c: FpxxConfig,
+    pipeStages: Int = 1,
+    generateFlags: Boolean = false
+) extends Component {
 
     assert(c.ieee_like, "Can only handle IEEE compliant floats")
     assert(intNrBits.value + fracNrBits.value + 2 > c.mant_size, "Not enough bits for SInt size")
-
-    def pipeStages = 1
 
     val io = new Bundle {
         val op = slave Flow (Fpxx(c))
         val result = master Flow (new Bundle {
             val number   = AFix.SQ(intNrBits, fracNrBits)
+            val flags    = generateFlags generate Fpxx.Flags()
             val overflow = Bool()
         })
     }
@@ -22,9 +27,10 @@ class Fpxx2AFix(intNrBits: BitCount, fracNrBits: BitCount, c: FpxxConfig) extend
     val n0 = new Node {
         arbitrateFrom(io.op)
 
-        val op   = insert(io.op.payload)
-        val sign = insert(op.sign)
-        val ge0  = insert(op.exp >= (c.bias - fracNrBits.value))
+        val op    = insert(io.op.payload)
+        val sign  = insert(op.sign)
+        val flags = generateFlags generate insert(op.flags)
+        val ge0   = insert(op.exp >= (c.bias - fracNrBits.value))
 
         val _shift = SInt(c.exp_size + 2 bits)
         _shift := (intNrBits.value - 1 + c.bias) - (U"00" @@ op.exp).asSInt // -1: leading "1" of mantissa
@@ -53,7 +59,8 @@ class Fpxx2AFix(intNrBits: BitCount, fracNrBits: BitCount, c: FpxxConfig) extend
         }
 
         io.result.number.assignFromBits(int.asBits)
-        io.result.overflow := ovfl
+        io.result.overflow                         := ovfl
+        if (generateFlags) io.result.payload.flags := n0.flags
 
         arbitrateTo(io.result)
     }

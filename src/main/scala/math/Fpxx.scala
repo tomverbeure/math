@@ -58,6 +58,12 @@ object Fpxx {
         fpxx.mant.assignBigInt(host.mant)
         fpxx
     }
+
+    case class Flags() extends Bundle {
+        val nan = Bool()
+        val inf = Bool()
+        val sign = Bool()
+    }
 }
 
 case class Fpxx(c: FpxxConfig) extends Bundle {
@@ -157,6 +163,13 @@ case class Fpxx(c: FpxxConfig) extends Bundle {
         neg.sign := !sign
         neg
     }
+
+    def flags(): Fpxx.Flags = new Composite(this) {
+        val flags = Fpxx.Flags()
+        flags.sign := sign
+        flags.inf := is_infinite()
+        flags.nan := is_nan()
+    }.flags
 }
 
 object FpxxHost {

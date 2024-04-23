@@ -30,7 +30,7 @@ class AFix2FpxxTester extends AnyFunSuite {
             FlowDriver(dut.io.op, dut.clockDomain) { payload =>
                 if (!cases.isEmpty) {
                     val a = cases.next()
-                    payload #= a
+                    payload.number #= a
 
                     scoreboard.pushRef(a)
                     true

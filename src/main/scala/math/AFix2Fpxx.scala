@@ -4,21 +4,30 @@ import spinal.core._
 import spinal.lib._
 import spinal.lib.misc.pipeline._
 
-class AFix2Fpxx(intNrBits: BitCount, fracNrBits: BitCount, c: FpxxConfig) extends Component {
+class AFix2Fpxx(
+    intNrBits: BitCount,
+    fracNrBits: BitCount,
+    c: FpxxConfig,
+    pipeStages: Int = 2,
+    consumeFlags: Boolean = false
+) extends Component {
 
     assert(c.ieee_like, "Can only handle IEEE compliant floats")
-    def pipeStages = 2
 
     val io = new Bundle {
-        val op     = slave Flow (AFix.SQ(intNrBits, fracNrBits))
+        val op = slave Flow (new Bundle {
+            val number = AFix.SQ(intNrBits, fracNrBits)
+            val flags  = consumeFlags generate Fpxx.Flags()
+        })
         val result = master Flow (Fpxx(c))
     }
 
-    val opBits = io.op.payload.getBitsWidth - 1
+    val opBits = io.op.payload.number.getBitsWidth - 1
 
     val n0 = new Node {
         arbitrateFrom(io.op)
-        val op     = insert(io.op.payload)
+        val flags  = consumeFlags generate insert(io.op.flags)
+        val op     = insert(io.op.number)
         val sign   = insert(op.raw.msb)
         val op_abs = insert(op.asSInt.absWithSym)
     }
@@ -30,11 +39,23 @@ class AFix2Fpxx(intNrBits: BitCount, fracNrBits: BitCount, c: FpxxConfig) extend
     val n2 = new Node {
         val op_adj = n0.op_abs |<< n1.lz
         val result = Fpxx(c)
+        result.clearAll().allowOverride()
         result.sign := n0.sign
 
-        when(n0.op_abs === 0) {
-            result.set_zero()
-        }
+        val baseWhen = if (consumeFlags) {
+            when { n0.flags.inf } {
+                result.sign := n0.flags.sign
+                result.set_inf()
+            }.elsewhen(n0.flags.nan) {
+                result.sign := n0.flags.sign
+                result.set_nan()
+            }
+        } else when { False }()
+
+        baseWhen
+            .elsewhen(n0.op_abs === 0) {
+                result.set_zero()
+            }
             .otherwise {
                 result.sign := n0.sign
                 result.exp  := intNrBits.value + c.bias - 1 - this(n1.lz)
