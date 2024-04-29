@@ -143,6 +143,7 @@ object BundleDebug {
 
                 ds match {
                     case d: Data => recurse(d)
+                    case _ => {}
                 }
             }
             c.rework {
