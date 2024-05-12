@@ -1,6 +1,13 @@
 
 package math
 
+import spinal.lib.Flow
+import spinal.core._
+import spinal.core.sim._
+import spinal.lib.sim.FlowDriver
+import spinal.lib.sim.FlowMonitor
+import spinal.core.fiber.Handle
+
 object Fp32 {
 
     def exp_bits    = 8
@@ -121,6 +128,48 @@ object FpxxTesterSupport {
                                 (Float.PositiveInfinity, Float.PositiveInfinity), (Float.PositiveInfinity, Float.NegativeInfinity), (Float.NegativeInfinity, Float.NegativeInfinity),
                                 (Float.MaxValue, 1), (Float.MaxValue, Float.MaxValue), (1, Float.MaxValue),
                                 (-Float.MaxValue, 1), (-Float.MaxValue, -Float.MaxValue), (-1, Float.MaxValue)
-                            )
+    )
+
+    def parseHexCases(file: scala.io.Source,
+        inputN: Int,
+        inConf: FpxxConfig,
+        outConf: FpxxConfig,
+        testZeroSign: Boolean = true): Iterator[(List[FpxxHost], FpxxHost)] = {
+        file.getLines().map{l =>
+            val parts = l.split(" ").map(BigInt(_, 16)).toList
+            (parts.slice(0, inputN).map(FpxxHost(_, inConf, testZeroSign=testZeroSign)).toList, FpxxHost(parts(inputN), outConf, testZeroSign=testZeroSign))
+        }
+    }
+
+    def testOperation[T <: Data](
+        stimuli: Iterator[(List[FpxxHost], FpxxHost)],
+        inputs: Flow[T],
+        output: Flow[Fpxx],
+        clockDomain: Handle[ClockDomain]
+    ) = {
+        val scoreboard = ScoreboardInOrder[FpxxHost]
+        FlowDriver(inputs, clockDomain) { payload =>
+            if (!stimuli.isEmpty) {
+                val (inputs, expected) = stimuli.next()
+                payload match {
+                    case f: Fpxx =>
+                        assert(inputs.length == 1)
+                        f #= inputs.head
+                    case v: Vec[Fpxx] =>
+                        assert(inputs.length == v.length)
+                        for ((p, c) <- v.zip(inputs)) p #= c
+                }
+
+                scoreboard.pushRef(expected, inputs)
+                true
+            } else false
+        }.setFactor(1f)
+
+        FlowMonitor(output, clockDomain) { payload =>
+            scoreboard.pushDut(payload.toHost())
+        }
+        clockDomain.forkStimulus(2)
+        clockDomain.waitActiveEdgeWhere(stimuli.isEmpty && scoreboard.ref.isEmpty)
+    }
 
 }

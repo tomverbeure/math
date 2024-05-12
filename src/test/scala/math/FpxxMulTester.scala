@@ -147,17 +147,14 @@ class FpxxMulTester extends AnyFunSuite {
         val outConfig = FpxxConfig.bfloat16()
 
         SimConfig.withFstWave.compile(BundleDebug.fpxxDebugBits(new Module {
-            val input = slave Flow(new Bundle {
-                val a = Fpxx(inConfig)
-                val b = Fpxx(inConfig)
-            })
+            val input = slave Flow(Vec(Fpxx(inConfig), 2))
             val result = master Flow(Fpxx(outConfig))
 
             val aConv = FpxxConverter(inConfig, FpxxConfig(8, 2))
             val bConv = FpxxConverter(inConfig, FpxxConfig(8, 2))
-            aConv.io.a.payload := input.a
+            aConv.io.a.payload := input.payload(0)
             aConv.io.a.valid := True
-            bConv.io.a.payload := input.b
+            bConv.io.a.payload := input.payload(1)
             bConv.io.a.valid := True
 
             val mult = FpxxMul(FpxxConfig(8, 2), Some(outConfig), mulConfig = FpxxMulConfig(pipeStages = 0))
@@ -168,31 +165,15 @@ class FpxxMulTester extends AnyFunSuite {
             mult.io.result >> result
         })).doSim{dut =>
             SimTimeout(10000000)
-            val scoreboard = ScoreboardInOrder[FpxxHost]
             val source = scala.io.Source.fromFile("testcases/mul_float8_e5m2fnuz_to_bfloat16.txt")
             val cases = source.getLines().map(l => l.split(" ")).map(_.toList).map {
                 case a :: b :: expected :: _ => {
                     val (aB, bB, eB) = (BigInt(a, 16), BigInt(b, 16), BigInt(expected, 16))
-                    (FpxxHost(aB, inConfig), FpxxHost(bB, inConfig), FpxxHost(eB, outConfig))
+                    (List(FpxxHost(aB, inConfig), FpxxHost(bB, inConfig)), FpxxHost(eB, outConfig))
                 }
             }
 
-            FlowDriver(dut.input, dut.clockDomain) { payload =>
-                if (!cases.isEmpty) {
-                    val (a, b, expected) = cases.next()
-                    payload.a #= a
-                    payload.b #= b
-                    scoreboard.pushRef(expected, (a, b))
-                    true
-                } else false
-            }
-
-            FlowMonitor(dut.result, dut.clockDomain) { payload =>
-                scoreboard.pushDut(payload.toHost())
-            }
-
-            dut.clockDomain.forkStimulus(2)
-            dut.clockDomain.waitActiveEdgeWhere(cases.isEmpty && scoreboard.ref.isEmpty)
+            testOperation(cases, dut.input, dut.result, dut.clockDomain)
         }
     }
 
