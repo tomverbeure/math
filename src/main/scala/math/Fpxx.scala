@@ -1,38 +1,41 @@
-
 package math
 
 import spinal.core._
 import spinal.core.sim._
 import java.nio.ByteBuffer
 
-
 sealed trait InfinityEncoding;
 case class NoInfinity(replaceWith: BigInt) extends InfinityEncoding;
-case class IEEEInfinity() extends InfinityEncoding;
+case class IEEEInfinity()                  extends InfinityEncoding;
 
 sealed trait NanEncoding;
-case class IEEENan() extends NanEncoding;
+case class IEEENan()                    extends NanEncoding;
 case class SpecialNan(encoding: BigInt) extends NanEncoding;
 
 sealed trait Bias;
-case class IEEEBias() extends Bias;
+case class IEEEBias()            extends Bias;
 case class CustomBias(bias: Int) extends Bias;
 
 object FpxxConfig {
-    def float64() = FpxxConfig(11, 52)
-    def float32() = FpxxConfig(8, 23)
-    def float16() = FpxxConfig(5, 10)
+    def float64()  = FpxxConfig(11, 52)
+    def float32()  = FpxxConfig(8, 23)
+    def float16()  = FpxxConfig(5, 10)
     def bfloat16() = FpxxConfig(8, 7)
-    def float8_e5m2fnuz() = FpxxConfig(5, 2, SpecialNan(BigInt("10000000", 2)),
-        inf_encoding = NoInfinity(BigInt("10000000", 2)), exp_bias = CustomBias(16),
-        signed_zero = false)
+    def float8_e5m2fnuz() = FpxxConfig(
+      5,
+      2,
+      SpecialNan(BigInt("10000000", 2)),
+      inf_encoding = NoInfinity(BigInt("10000000", 2)),
+      exp_bias = CustomBias(16),
+      signed_zero = false
+    )
 }
 
 case class FpxxConfig(
-                exp_size    : Int,
-                mant_size   : Int,
-    		nan_encoding: NanEncoding = IEEENan(),
-    		inf_encoding: InfinityEncoding = IEEEInfinity(),
+    exp_size: Int,
+    mant_size: Int,
+    nan_encoding: NanEncoding = IEEENan(),
+    inf_encoding: InfinityEncoding = IEEEInfinity(),
     exp_bias: Bias = IEEEBias(),
     signed_zero: Boolean = true
 ) {
@@ -41,17 +44,16 @@ case class FpxxConfig(
 
     def bias = exp_bias match {
         case CustomBias(bias) => bias
-        case IEEEBias() => (1<<(exp_size-1))-1
+        case IEEEBias()       => (1 << (exp_size - 1)) - 1
     }
 
-    def ieee_like = nan_encoding.isInstanceOf[IEEENan] && inf_encoding.isInstanceOf[IEEEInfinity] && exp_bias.isInstanceOf[IEEEBias] && signed_zero
+    def ieee_like = nan_encoding.isInstanceOf[IEEENan] && inf_encoding.isInstanceOf[IEEEInfinity] && exp_bias
+        .isInstanceOf[IEEEBias] && signed_zero
 }
 
-
-
 object Fpxx {
-    def apply(exp_size: Int, mant_size: Int) : Fpxx = Fpxx(FpxxConfig(exp_size, mant_size))
-    def apply(host: FpxxHost) : Fpxx = {
+    def apply(exp_size: Int, mant_size: Int): Fpxx = Fpxx(FpxxConfig(exp_size, mant_size))
+    def apply(host: FpxxHost): Fpxx = {
         val fpxx = Fpxx(host.c)
         fpxx.sign.assignBigInt(host.sign)
         fpxx.exp.assignBigInt(host.exp)
@@ -60,31 +62,31 @@ object Fpxx {
     }
 
     case class Flags() extends Bundle {
-        val nan = Bool()
-        val inf = Bool()
+        val nan  = Bool()
+        val inf  = Bool()
         val sign = Bool()
     }
 }
 
 case class Fpxx(c: FpxxConfig) extends Bundle {
-    val mant    = UInt(c.mant_size bits)
-    val exp     = UInt(c.exp_size bits)
-    val sign    = Bool
+    val mant = UInt(c.mant_size bits)
+    val exp  = UInt(c.exp_size bits)
+    val sign = Bool
 
-    def is_zero() : Bool = {
+    def is_zero(): Bool = {
         exp === 0 && mant === 0
     }
 
     def is_nan(): Bool = {
         c.nan_encoding match {
-            case IEEENan() => this.exp.andR && this.mant.orR
+            case IEEENan()            => this.exp.andR && this.mant.orR
             case SpecialNan(encoding) => this.asBits.asUInt === U(encoding)
         }
     }
 
     def is_infinite(): Bool = {
         c.inf_encoding match {
-            case IEEEInfinity() => this.exp.andR && !this.mant.orR
+            case IEEEInfinity()          => this.exp.andR && !this.mant.orR
             case NoInfinity(replaceWith) => False
         }
     }
@@ -118,11 +120,11 @@ case class Fpxx(c: FpxxConfig) extends Bundle {
 
     def set_zero() = {
         if (!c.signed_zero) sign := False
-        exp     := 0
-        mant    := 0
+        exp                      := 0
+        mant                     := 0
     }
 
-    def abs() : Fpxx = {
+    def abs(): Fpxx = {
         val abs = Fpxx(c)
 
         abs.sign := False
@@ -132,18 +134,18 @@ case class Fpxx(c: FpxxConfig) extends Bundle {
         abs
     }
 
-    def full_mant() : UInt = {
-        mant.resize(c.mant_size+1) | (1<<c.mant_size)
+    def full_mant(): UInt = {
+        mant.resize(c.mant_size + 1) | (1 << c.mant_size)
     }
 
-    def init() : Fpxx = {
-        sign init(False)
-        exp  init(0)
-        mant init(0)
+    def init(): Fpxx = {
+        sign init (False)
+        exp init (0)
+        mant init (0)
         this
     }
 
-    def toHost() : FpxxHost = {
+    def toHost(): FpxxHost = {
         val value = (this.sign.toBigInt << c.exp_size + c.mant_size) |
             (this.exp.toBigInt << c.mant_size) | this.mant.toBigInt
         FpxxHost(value, c)
@@ -158,7 +160,7 @@ case class Fpxx(c: FpxxConfig) extends Bundle {
 
     def unary_~() = {
         val neg = cloneOf(this)
-        neg.exp := exp
+        neg.exp  := exp
         neg.mant := mant
         neg.sign := !sign
         neg
@@ -167,14 +169,14 @@ case class Fpxx(c: FpxxConfig) extends Bundle {
     def flags(): Fpxx.Flags = new Composite(this) {
         val flags = Fpxx.Flags()
         flags.sign := sign
-        flags.inf := is_infinite()
-        flags.nan := is_nan()
+        flags.inf  := is_infinite()
+        flags.nan  := is_nan()
     }.flags
 }
 
 object FpxxHost {
     implicit def apply(f: Float): FpxxHost = {
-        FpxxHost(BigInt(1, ByteBuffer.allocate(4).putFloat(f).array()) , FpxxConfig.float32())
+        FpxxHost(BigInt(1, ByteBuffer.allocate(4).putFloat(f).array()), FpxxConfig.float32())
     }
 
     implicit def apply(d: Double): FpxxHost = {
@@ -183,12 +185,12 @@ object FpxxHost {
 }
 
 // Used on simulator side
-case class FpxxHost(value: BigInt, c: FpxxConfig, maxUlpDist: Int = 0) {
-    val exp_mask: BigInt = (BigInt(1) << c.exp_size) - 1
+case class FpxxHost(value: BigInt, c: FpxxConfig, maxUlpDist: Int = 0, testZeroSign: Boolean = true) {
+    val exp_mask: BigInt  = (BigInt(1) << c.exp_size) - 1
     val mant_mask: BigInt = (BigInt(1) << c.mant_size) - 1
 
     def sign = value >> (c.exp_size + c.mant_size)
-    def exp = (value >> c.mant_size) & exp_mask
+    def exp  = (value >> c.mant_size) & exp_mask
     def mant = value & mant_mask
 
     def isDenormal = exp == 0 && mant != 0
@@ -196,13 +198,13 @@ case class FpxxHost(value: BigInt, c: FpxxConfig, maxUlpDist: Int = 0) {
     def isZero = exp == 0 && mant == 0
 
     def isNan = c.nan_encoding match {
-        case IEEENan() => exp == exp_mask && mant != 0
+        case IEEENan()            => exp == exp_mask && mant != 0
         case SpecialNan(encoding) => value == encoding
     }
 
     def isInf = c.inf_encoding match {
         case IEEEInfinity() => exp == exp_mask && mant == 0
-        case NoInfinity(_) => false
+        case NoInfinity(_)  => false
     }
 
     def ulpDist(other: FpxxHost) = {
@@ -212,25 +214,31 @@ case class FpxxHost(value: BigInt, c: FpxxConfig, maxUlpDist: Int = 0) {
 
     override def toString = {
         // align to 4 bit boundary
-        val mantissa_aligned = mant << (4 - (c.mant_size % 4))
-        val mantissa_str = mantissa_aligned.toString(16)
+        val mantissa_aligned    = mant << (4 - (c.mant_size % 4))
+        val mantissa_str        = mantissa_aligned.toString(16)
         val mantissa_str_padded = mantissa_str.reverse.padTo((c.mant_size + 3) / 4, '0').reverse
-        val leading = if (exp == 0) "0" else "1"
-        val exponent_centered = if (exp == 0) 1 - c.bias else exp.toInt - c.bias
-        val signStr = if (sign == 1) "-" else ""
-        val str = if (isNan) "NaN" else if (isInf) f"${signStr}inf" else {
-            f"$signStr$leading%s.${mantissa_str_padded}p$exponent_centered%d"
-        }
+        val leading             = if (exp == 0) "0" else "1"
+        val exponent_centered   = if (exp == 0) 1 - c.bias else exp.toInt - c.bias
+        val signStr             = if (sign == 1) "-" else ""
+        val str =
+            if (isNan) "NaN"
+            else if (isInf) f"${signStr}inf"
+            else {
+                f"$signStr$leading%s.${mantissa_str_padded}p$exponent_centered%d"
+            }
         f"$str(0x${value.toString(16)})"
     }
 
     override def equals(other: Any): Boolean = {
         other match {
-            case o @ FpxxHost(_, oc, _) => c == oc &&
+            case o @ FpxxHost(_, oc, _, _) =>
+                c == oc &&
                 (ulpDist(o) <= maxUlpDist ||
                     isNan && o.isNan ||
-                    isInf && o.isInf && sign == o.sign)
+                    isInf && o.isInf && sign == o.sign ||
+                    !testZeroSign && o.isZero && o.isZero)
             case _ => false
         }
     }
 }
+
