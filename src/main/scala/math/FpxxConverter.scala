@@ -9,7 +9,8 @@ import spinal.lib.misc.pipeline._
 case class FpxxConverter(
     in_config: FpxxConfig,
     out_config: FpxxConfig,
-    pipeStages: (Boolean, Boolean, Boolean, Boolean) = (false, false, false, false)
+    pipeStages: (Boolean, Boolean, Boolean, Boolean) = (false, false, false, false),
+    rounding: RoundType = RoundType.ROUNDTOEVEN
 ) extends Module {
     val io = new Bundle {
         val a = slave Flow (Fpxx(in_config))
@@ -57,13 +58,16 @@ case class FpxxConverter(
 
     val n3 = new Node {
         // If the output mantissa is smaller than the input mantissa, then we need to round
-        val (_carry_bit, _rounded_mantissa) = if (io.a.c.mant_size > io.r.c.mant_size) {
-            MantissaRoundToEven(n2.shifted_mant, n2.shifted_mant.getWidth - io.r.c.mant_size)
+        val _rounded_mantissa = if (io.a.c.mant_size > io.r.c.mant_size) {
+            n2.shifted_mant.fixTo(
+              this(n2.shifted_mant).getWidth downto this(n2.shifted_mant).getWidth - io.r.c.mant_size,
+              rounding
+            )
         } else {
-            (False, n1.norm_mant ## U(0, io.r.c.mant_size - io.a.c.mant_size bits))
+            U(0, 1 bit) ## n1.norm_mant ## U(0, io.r.c.mant_size - io.a.c.mant_size bits)
         }
-        val carry_bit        = insert(_carry_bit)
-        val rounded_mantissa = insert(_rounded_mantissa)
+        val carry_bit        = insert(_rounded_mantissa.msb)
+        val rounded_mantissa = insert(_rounded_mantissa(0, _rounded_mantissa.getWidth - 1 bits))
     }
 
     val max_exponent = (1 << io.r.c.exp_size) - 1

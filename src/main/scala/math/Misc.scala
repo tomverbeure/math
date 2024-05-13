@@ -32,23 +32,6 @@ object LeadingZeros {
 
 }
 
-object MantissaRoundToEven {
-    // Rounds to even at the given LSB, removing bits after it. Also returns the carry bit if any.
-    def apply(mantissa: UInt, lsb: Int): (Bool, UInt) = new Composite(mantissa) {
-        val roundUp = mantissa(lsb)
-        val rounding_term = if (lsb > 0) 1 << (lsb - 1) else 0
-        val term_bits = lsb bits
-        val rounded_mantissa =
-            mantissa +^ roundUp.mux(U(rounding_term.max(0), term_bits), U((rounding_term - 1).max(0), term_bits))
-
-        val rounded =
-            (
-                rounded_mantissa(rounded_mantissa.getWidth - 1),
-                rounded_mantissa(rounded_mantissa.getWidth - 2 downto lsb)
-            )
-    }.rounded
-}
-
 object OptPipe {
     def apply[T <: Data](that : T, ena: Bool, pipeline : Boolean) : T = if (pipeline) RegNextWhen(that, ena) else that
     def apply[T <: Data](that : T, pipeline : Boolean) : T = apply(that, True, pipeline)
