@@ -236,7 +236,7 @@ case class FpxxHost(value: BigInt, c: FpxxConfig, maxUlpDist: Int = 0, testZeroS
                 (ulpDist(o) <= maxUlpDist ||
                     isNan && o.isNan ||
                     isInf && o.isInf && sign == o.sign ||
-                    !testZeroSign && o.isZero && o.isZero)
+                    !testZeroSign && isZero && o.isZero)
             case _ => false
         }
     }

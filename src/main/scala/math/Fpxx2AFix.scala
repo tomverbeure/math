@@ -30,7 +30,7 @@ class Fpxx2AFix(
         val op    = insert(io.op.payload)
         val sign  = insert(op.sign)
         val flags = generateFlags generate insert(op.flags)
-        val ge0   = insert(op.exp >= (c.bias - fracNrBits.value))
+        val ge0   = insert(op.exp >= (c.bias - fracNrBits.value).max(0) && !op.is_zero())
 
         val _shift = SInt(c.exp_size + 2 bits)
         _shift := (intNrBits.value - 1 + c.bias) - (U"00" @@ op.exp).asSInt // -1: leading "1" of mantissa

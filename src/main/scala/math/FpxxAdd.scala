@@ -155,7 +155,7 @@ class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = FpxxAddConfig()) extends
             mant_final.clearAll
         }.otherwise {
             sign_final := n2.sign_add
-            exp_final  := ((n4.lz < c.mant_size + 1) && !exp_add_m_lz.msb) ? exp_add_m_lz.asUInt.resize(c.exp_size) | 0
+            exp_final  := ((n4.lz < preround_size + 1) && !exp_add_m_lz.msb) ? exp_add_m_lz.asUInt.resize(c.exp_size) | 0
             mant_final := (!exp_add_m_lz.msb && !exp_eq_lz) ? mant_rounded.resized | U(0, c.mant_size bits)
         }
 
