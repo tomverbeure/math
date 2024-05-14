@@ -17,7 +17,7 @@ class AFix2FpxxTester extends AnyFunSuite {
 
     test("AFix2Fpxx Q12.2") {
         var compiled = SimConfig.withIVerilog.withWave
-            .compile(BundleDebug.fpxxDebugBits(new AFix2Fpxx(10 bits, 1 bit, config)))
+            .compile(BundleDebug.fpxxDebugBits(new AFix2Fpxx(24 bits, 1 bit, config)))
 
         compiled.doSim { dut =>
             SimTimeout(100000)

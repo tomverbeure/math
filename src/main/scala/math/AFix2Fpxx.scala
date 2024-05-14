@@ -9,7 +9,8 @@ class AFix2Fpxx(
     fracNrBits: BitCount,
     c: FpxxConfig,
     pipeStages: Int = 2,
-    consumeFlags: Boolean = false
+    consumeFlags: Boolean = false,
+    rounding: RoundType = RoundType.ROUNDTOEVEN
 ) extends Component {
 
     assert(c.ieee_like, "Can only handle IEEE compliant floats")
@@ -22,7 +23,7 @@ class AFix2Fpxx(
         val result = master Flow (Fpxx(c))
     }
 
-    val opBits = io.op.payload.number.getBitsWidth - 1
+    val opBits = io.op.payload.number.numWidth
 
     val n0 = new Node {
         arbitrateFrom(io.op)
@@ -37,7 +38,7 @@ class AFix2Fpxx(
     }
 
     val n2 = new Node {
-        val op_adj = n0.op_abs |<< n1.lz
+        val op_adj = n0.op_abs |<< (n1.lz + 1)
         val result = Fpxx(c)
         result.clearAll().allowOverride()
         result.sign := n0.sign
@@ -57,14 +58,10 @@ class AFix2Fpxx(
                 result.set_zero()
             }
             .otherwise {
+                val rounded = op_adj.fixTo(opBits downto opBits - c.mant_size, rounding)
                 result.sign := n0.sign
-                result.exp  := intNrBits.value + c.bias - 1 - this(n1.lz)
-
-                if (opBits - 1 >= c.mant_size) {
-                    result.mant := op_adj(opBits - c.mant_size - 1, c.mant_size bits)
-                } else {
-                    result.mant := op_adj.resize(opBits - 1) @@ U(0, (c.mant_size - opBits + 1) bits)
-                }
+                result.exp  := (intNrBits.value + c.bias - 1 - this(n1.lz) + rounded.msb.asUInt).resized
+                result.mant := rounded.resized
             }
 
         io.result.payload := result
