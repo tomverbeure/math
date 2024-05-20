@@ -17,7 +17,7 @@ class FpxxConverterTester extends AnyFunSuite {
       SimConfig
           .withFstWave
           .noOptimisation
-          .compile(FpxxConverter(inConfig, outConfig))
+          .compile(FpxxConverter(inConfig, outConfig, pipeStages = (true, true, true, true)))
           .doSim { dut =>
               dut.clockDomain.forkStimulus(period = 10)
 

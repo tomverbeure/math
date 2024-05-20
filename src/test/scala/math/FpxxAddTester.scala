@@ -1,4 +1,3 @@
-
 package math
 
 import org.scalatest.funsuite.AnyFunSuite
@@ -8,140 +7,104 @@ import math.FpxxTesterSupport._
 import spinal.sim._
 import spinal.core._
 import spinal.core.sim._
+import spinal.lib._
+import spinal.core.formal._
 
 object FpxxAddTester {
 
-    class FpxxAddDut(config: FpxxConfig) extends Component {
-        val io = new Bundle {
-            val op_vld      = in(Bool)
-            val op_a        = in(Bits(config.full_size bits))
-            val op_b        = in(Bits(config.full_size bits))
+    case class FpxxAddDut(config: FpxxConfig) extends Component {
+        val op     = slave Flow (Vec(Fpxx(config), 2))
+        val result = master Flow (Fpxx(config))
 
-            val result_vld  = out(Bool)
-            val result      = out(Bits(config.full_size bits))
+        val inner = new FpxxAdd(config)
+        inner.io.op.valid := op.valid
+        inner.io.op.a     := op.payload(0)
+        inner.io.op.b     := op.payload(1)
+
+        val addDelay = LatencyAnalysis(inner.io.op.valid, inner.io.result.valid)
+
+        val equiv = new Area {
+            val toFix = List.tabulate(2) { i =>
+                val conv = new Fpxx2AFix(
+                  (result.payload.exp.maxValue - config.bias + 3) bits,
+                  config.bias + config.mant_size bits,
+                  config,
+                  if (addDelay > 2) 1 else 0,
+                  true
+                )
+                conv.io.op << op.map(_(i))
+                conv.io.result
+            }
+
+            val sum = toFix.reduce { (a, b) =>
+                val next = cloneOf(a)
+                next.valid      := a.valid && b.valid
+                next.number     := (a.number + b.number).truncated
+                next.flags.inf  := a.flags.inf || b.flags.inf
+                next.flags.nan  := a.flags.nan || b.flags.nan
+                next.flags.sign := a.flags.sign || b.flags.sign
+                next
+            }
+
+            val toFpxx = new AFix2Fpxx(
+              result.payload.exp.maxValue - config.bias + 3 bits,
+              config.bias + config.mant_size bits,
+              config,
+              scala.math.min(addDelay, 2),
+              true
+            )
+
+            toFpxx.io.op.assignAllByName(sum)
+
+            val fixedDelay = LatencyAnalysis(op.valid, toFpxx.io.result.valid)
+
+            val fixRes = Delay(toFpxx.io.result, addDelay - fixedDelay)
+
+            when(pastValidAfterReset()) {
+                assert(fixRes.valid === inner.io.result.valid, "Valid should be equal")
+                when(fixRes.valid) {
+                    assert(
+                      fixRes.payload === inner.io.result.payload ||
+                          (fixRes.is_nan() || fixRes.is_infinite()) && (inner.io.result.is_nan() || inner.io.result
+                              .is_infinite()) || fixRes.is_zero() && inner.io.result.is_zero(),
+                      "Fixed and adder outputs should match"
+                    )
+                }
+            }
         }
 
-        val fp_op = new FpxxAdd(config, FpxxAddConfig(pipeStages = 5))
-        fp_op.io.op.valid :=    RegNext(io.op_vld) init(False)
-        fp_op.io.op.a.assignFromBits(RegNext(io.op_a))
-        fp_op.io.op.b.assignFromBits(RegNext(io.op_b))
-
-        io.result_vld := RegNext(fp_op.io.result.valid) init(False)
-        io.result     := RegNext(fp_op.io.result.payload).asBits
+        result << inner.io.result
     }
 }
 
 class FpxxAddTester extends AnyFunSuite {
 
-    def resultMatches(opA: Float, opB: Float, expected: Float, actual: Float, verbose: Boolean = false) : Boolean = {
+    test("add float16") {
+        val config = FpxxConfig.float16()
 
-        val actualMant   : Long = Fp32.mant(actual)
-        val expectedMant : Long = Fp32.mant(expected)
-
-        val lz = scala.math.max(scala.math.max(Fp32.exp(opA),Fp32.exp(opB)) - Fp32.exp(expected), 0)
-        val max_mant_err = 1<<lz
-        val mant_err = (Fp32.mant(expected) - Fp32.mant(actual)).abs
-
-        var matches = false
-        matches |= Fp32.isDenormal(expected) && Fp32.isZero(actual)
-        matches |= Fp32.isInfinite(expected) && Fp32.isInfinite(actual)
-        matches |= Fp32.isNaN(expected)      && Fp32.isNaN(actual)
-        matches |= Fp32.isZero(expected)     && Fp32.isZero(actual)
-        matches |= (Fp32.exp(expected)  == Fp32.exp(actual))  &&
-                   (Fp32.sign(expected) == Fp32.sign(actual)) &&
-                   (mant_err <= max_mant_err)
-
-        if (!matches){
-            printf("\n")
-            printf("ERROR!\n")
-            printAll(opA, opB, expected, actual);
-            printf("mant_err: %d, max_mant_err: %d, lz: %d\n", mant_err, max_mant_err, lz);
-
-            false
-        }
-        else{
-            if (verbose){
-                printf("Match!\n")
-                printAll(opA, opB, expected, actual);
+        SimConfig.withIVerilog.withWave.noOptimisation
+            .compile(BundleDebug.fpxxDebugBits(FpxxAddTester.FpxxAddDut(config)))
+            .doSim { dut =>
+                SimTimeout(100000)
+                val stimuli = parseHexCases(scala.io.Source.fromFile("testcases/f16_add.txt"), 2, config, config, false)
+                    // No denormals
+                    .filter { a => !a._2.isDenormal && !a._1.map(_.isDenormal).reduce(_ || _) }
+                testOperation(stimuli, dut.op, dut.result, dut.clockDomain)
             }
-            true
-        }
     }
 
-    test("FpxxAdd") {
+    test("add float32") {
+        val config = FpxxConfig.float32()
 
-        val config = FpxxConfig(8, 23)
-
-        var compiled = SimConfig
-//            .withWave
-            .allOptimisation
-            .compile(new FpxxAddTester.FpxxAddDut(config))
-
-        compiled.doSim { dut =>
-
-            dut.clockDomain.forkStimulus(period = 10)
-            dut.clockDomain.forkSimSpeedPrinter(0.2)
-            dut.io.op_vld #= false
-            dut.clockDomain.waitSampling()
-
-            val stimuli = FpxxTesterSupport.directedStimuli
-
-            var rand = new scala.util.Random(0)
-            var i = 0
-            var pass = 0
-            var fail = 0
-
-            while(i < stimuli.size || i < 1000000) {
-                var inputs : (Float, Float) = (0.0f, 0.0f)
-                if (i < stimuli.size){
-                    inputs = stimuli(i)
-                }
-                else{
-                    inputs = ( Fp32.randomRegular(rand), Fp32.randomRegular(rand) )
-                }
-
-
-                val op_a        = inputs._1
-                val op_b        = inputs._2
-                val result_exp  = op_a + op_b
-
-                // Convert signed int to positive long
-                var op_a_long : Long = Fp32.asBits(op_a)
-                var op_b_long : Long = Fp32.asBits(op_b)
-
-                // Apply operands
-                dut.io.op_vld #= true
-                dut.io.op_a   #= op_a_long
-                dut.io.op_b   #= op_b_long
-                dut.clockDomain.waitSampling(1)
-                dut.io.op_vld #= false
-
-                // Wait until result appears
-                while(!dut.io.result_vld.toBoolean){
-                    dut.clockDomain.waitSampling()
-                }
-
-                // Actual result
-                val result_act = Fp32.asFloat(dut.io.result.toLong.toInt)
-
-                dut.clockDomain.waitSampling()
-
-                if (resultMatches(op_a, op_b, result_exp, result_act, verbose = false)){
-                    pass += 1
-                }
-                else {
-                    fail += 1
-                    printf("%6d: %10e, %10e\n", i, op_a, op_b)
-                    printf("Expected: %10e, Actual: %10e\n", result_exp, result_act);
-                    printf("--------\n")
-                    simFailure("ABORTING!")
-                }
-
-                if (i%1000 == 0) printf(".")
-                i+=1
+        SimConfig.withIVerilog.withWave.noOptimisation
+            .compile(BundleDebug.fpxxDebugBits(FpxxAddTester.FpxxAddDut(config)))
+            .doSim { dut =>
+                SimTimeout(100000)
+                val stimuli = parseHexCases(scala.io.Source.fromFile("testcases/f32_add.txt"), 2, config, config, false)
+                    // No denormals
+                    .filter { a => !a._2.isDenormal && !a._1.map(_.isDenormal).reduce(_ || _) }
+                testOperation(stimuli, dut.op, dut.result, dut.clockDomain)
             }
-
-        }
     }
 
 }
