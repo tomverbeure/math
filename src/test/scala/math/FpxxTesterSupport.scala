@@ -8,6 +8,8 @@ import spinal.lib.sim.FlowDriver
 import spinal.lib.sim.FlowMonitor
 import spinal.core.fiber.Handle
 
+import scala.sys.process._
+
 object Fp32 {
 
     def exp_bits    = 8
@@ -130,12 +132,26 @@ object FpxxTesterSupport {
                                 (-Float.MaxValue, 1), (-Float.MaxValue, -Float.MaxValue), (-1, Float.MaxValue)
     )
 
-    def parseHexCases(file: scala.io.Source,
+    def testfloatGen(
+        arguments: Seq[String]
+    ) = {
+        val genBin = sys.env.get("TESTFLOAT_GEN_BIN") getOrElse {
+            assert(Process(Seq("make", "-C", "berkeley-softfloat-3/build/Linux-x86_64-GCC")).! == 0)
+            assert(Process(Seq("make", "-C", "berkeley-testfloat-3/build/Linux-x86_64-GCC")).! == 0)
+
+            "berkeley-testfloat-3/build/Linux-x86_64-GCC/testfloat_gen"
+        }
+
+        Process(genBin, arguments).lineStream.iterator
+    }
+
+    def parseHexCases(
+        lines: Iterator[String],
         inputN: Int,
         inConf: FpxxConfig,
         outConf: FpxxConfig,
         testZeroSign: Boolean = true): Iterator[(List[FpxxHost], FpxxHost)] = {
-        file.getLines().map{l =>
+        lines.map{l =>
             val parts = l.split(" ").map(BigInt(_, 16)).toList
             (parts.slice(0, inputN).map(FpxxHost(_, inConf, testZeroSign=testZeroSign)).toList, FpxxHost(parts(inputN), outConf, testZeroSign=testZeroSign))
         }

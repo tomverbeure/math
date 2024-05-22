@@ -86,7 +86,7 @@ class FpxxAddTester extends AnyFunSuite {
             .compile(BundleDebug.fpxxDebugBits(FpxxAddTester.FpxxAddDut(config)))
             .doSim { dut =>
                 SimTimeout(100000)
-                val stimuli = parseHexCases(scala.io.Source.fromFile("testcases/f16_add.txt"), 2, config, config, false)
+                val stimuli = parseHexCases(testfloatGen(Seq("f16_add")), 2, config, config, false)
                     // No denormals
                     .filter { a => !a._2.isDenormal && !a._1.map(_.isDenormal).reduce(_ || _) }
                 testOperation(stimuli, dut.op, dut.result, dut.clockDomain)
@@ -100,7 +100,7 @@ class FpxxAddTester extends AnyFunSuite {
             .compile(BundleDebug.fpxxDebugBits(FpxxAddTester.FpxxAddDut(config)))
             .doSim { dut =>
                 SimTimeout(100000)
-                val stimuli = parseHexCases(scala.io.Source.fromFile("testcases/f32_add.txt"), 2, config, config, false)
+                val stimuli = parseHexCases(testfloatGen(Seq("f32_add")), 2, config, config, false)
                     // No denormals
                     .filter { a => !a._2.isDenormal && !a._1.map(_.isDenormal).reduce(_ || _) }
                 testOperation(stimuli, dut.op, dut.result, dut.clockDomain)
