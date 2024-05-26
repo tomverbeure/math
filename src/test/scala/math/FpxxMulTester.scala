@@ -72,8 +72,8 @@ class FpxxMulTester extends AnyFunSuite {
                 val input  = slave Flow (Vec(Fpxx(inConfig), 2))
                 val result = master Flow (Fpxx(outConfig))
 
-                val aConv = FpxxConverter(inConfig, FpxxConfig(8, 2))
-                val bConv = FpxxConverter(inConfig, FpxxConfig(8, 2))
+                val aConv = FpxxConverter(FpxxConverter.Options(inConfig, FpxxConfig(8, 2)))
+                val bConv = FpxxConverter(FpxxConverter.Options(inConfig, FpxxConfig(8, 2)))
                 aConv.io.a.payload := input.payload(0)
                 aConv.io.a.valid   := True
                 bConv.io.a.payload := input.payload(1)

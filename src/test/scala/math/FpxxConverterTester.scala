@@ -16,7 +16,7 @@ class FpxxConverterTester extends AnyFunSuite {
         testLines: Iterator[String]
     ) {
         SimConfig.withWave.noOptimisation
-            .compile(FpxxConverter(inConfig, outConfig, pipeStages = (true, true, true, true)))
+            .compile(FpxxConverter(FpxxConverter.Options(inConfig, outConfig, pipeStages = List(true, true, true, true))))
             .doSim { dut =>
                 SimTimeout(1000000)
                 val stimuli = FpxxTesterSupport.parseHexCases(testLines, 1, inConfig, outConfig)

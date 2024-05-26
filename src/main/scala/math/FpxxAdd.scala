@@ -6,26 +6,34 @@ import spinal.lib.misc.pipeline._
 
 // Doesn't support: denormals and correct signed zeros
 
-case class FpxxAddConfig(
-    pipeStages: Int = 1,
-    stickyBit: Boolean = true,
-    rounding: RoundType = RoundType.ROUNDTOEVEN
-) {}
+object FpxxAdd {
+    import caseapp._
 
-class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = FpxxAddConfig()) extends Component {
+    case class Options(
+        @HelpMessage(cli.Cli.fpxxConfigHelpMsg)
+        c: FpxxConfig,
+        @HelpMessage(cli.Cli.stageMaskHelpMsg(5))
+        pipeStages: StageMask = 0,
+        @HelpMessage("Compute sticky bit for intermediate calculations. Default=true")
+        stickyBit: Boolean = true,
+        @HelpMessage(cli.Cli.roundTypeHelpMsg)
+        rounding: RoundType = RoundType.ROUNDTOEVEN
+    ) {}
+}
 
-    assert(c.ieee_like, "Can only handle IEEE compliant floats")
-    def pipeStages = if (addConfig == null) 1 else addConfig.pipeStages
+class FpxxAdd(o: FpxxAdd.Options) extends Component {
 
-    val round_bits    = if (addConfig.rounding == RoundType.ROUNDTOZERO) 0 else 3
-    val preround_size = c.mant_size + round_bits
+    assert(o.c.ieee_like, "Can only handle IEEE compliant floats")
+
+    val round_bits    = if (o.rounding == RoundType.ROUNDTOZERO) 0 else 3
+    val preround_size = o.c.mant_size + round_bits
 
     val io = new Bundle {
         val op = slave Flow (new Bundle {
-            val a = Fpxx(c)
-            val b = Fpxx(c)
+            val a = Fpxx(o.c)
+            val b = Fpxx(o.c)
         })
-        val result = master Flow (Fpxx(c))
+        val result = master Flow (Fpxx(o.c))
     }
 
     val n0 = new Node {
@@ -46,7 +54,7 @@ class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = FpxxAddConfig()) extends
         val mant_a = a_is_zero.mux(U(0), a.full_mant())
         val mant_b = b_is_zero.mux(U(0), b.full_mant())
 
-        val exp_diff_a_b = a.exp.resize(c.exp_size + 1).asSInt - b.exp.resize(c.exp_size + 1).asSInt
+        val exp_diff_a_b = a.exp.resize(o.c.exp_size + 1).asSInt - b.exp.resize(o.c.exp_size + 1).asSInt
         val exp_diff_b_a = b.exp - a.exp
 
         val a_geq_b = exp_diff_a_b >= 0
@@ -66,7 +74,7 @@ class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = FpxxAddConfig()) extends
         val mant_a_adj    = insert((n0.mant_a_swap << round_bits).resize(preround_size + 2))
         val _mant_b_shift = UInt(preround_size + 2 bits)
         _mant_b_shift := ((n0.mant_b_swap << round_bits) |>> n0.exp_diff).resize(preround_size + 2)
-        if (addConfig.stickyBit) {
+        if (o.stickyBit) {
             _mant_b_shift.lsb := (((U(1) << (n0.exp_diff.intoSInt - round_bits + 1)
                 .max(0)
                 .absWithSym) - 1).resized & n0.mant_b_swap).orR
@@ -109,13 +117,13 @@ class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = FpxxAddConfig()) extends
         // and do it in parallel with the addition, but that's not done here.
         val _lz = n0.is_zero ? U(0) | LeadingZeros(n3.mant_add.resize(preround_size + 1).asBits)
 
-        val _exp_add_adj  = UInt(c.exp_size bits)
+        val _exp_add_adj  = UInt(o.c.exp_size bits)
         val _mant_add_adj = UInt(preround_size + 1 bits)
 
         when(n3.mant_add(preround_size + 1)) {
-            _mant_add_adj                             := n3.mant_add >> 1
-            if (addConfig.stickyBit) _mant_add_adj(0) := n3.mant_add(0) || n3.mant_add(1)
-            _exp_add_adj                              := n0.exp_add + 1
+            _mant_add_adj                     := n3.mant_add >> 1
+            if (o.stickyBit) _mant_add_adj(0) := n3.mant_add(0) || n3.mant_add(1)
+            _exp_add_adj                      := n0.exp_add + 1
             _lz.clearAll
         }
             .otherwise {
@@ -130,17 +138,17 @@ class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = FpxxAddConfig()) extends
 
     val n5 = new Node {
         val sign_final    = Bool
-        val exp_final     = UInt(c.exp_size bits)
+        val exp_final     = UInt(o.c.exp_size bits)
         val mant_renormed = (n4.mant_add_adj |<< n4.lz)
         val mant_rounded = mant_renormed.fixTo(
           mant_renormed.getWidth downto round_bits,
-          addConfig.rounding
+          o.rounding
         )
-        val mant_final = UInt(c.mant_size bits)
+        val mant_final = UInt(o.c.mant_size bits)
 
-        val exp_add_m_lz = SInt(c.exp_size + 1 bits)
-        exp_add_m_lz := n4.exp_add_adj.resize(c.exp_size + 1).asSInt - n4.lz
-            .resize(c.exp_size + 1)
+        val exp_add_m_lz = SInt(o.c.exp_size + 1 bits)
+        exp_add_m_lz := n4.exp_add_adj.resize(o.c.exp_size + 1).asSInt - n4.lz
+            .resize(o.c.exp_size + 1)
             .asSInt + mant_rounded.msb.asUInt.intoSInt
 
         val exp_eq_lz = n4.exp_add_adj === n4.lz
@@ -148,15 +156,17 @@ class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = FpxxAddConfig()) extends
         when(n0.is_nan) {
             sign_final := False
             exp_final.setAll
-            mant_final := (c.mant_size - 1 -> True, default -> False)
+            mant_final := (o.c.mant_size - 1 -> True, default -> False)
         }.elsewhen(n0.is_inf || n4.exp_add_adj.andR) {
             sign_final := n2.sign_add
             exp_final.setAll
             mant_final.clearAll
         }.otherwise {
             sign_final := n2.sign_add
-            exp_final  := ((n4.lz < preround_size + 1) && !exp_add_m_lz.msb) ? exp_add_m_lz.asUInt.resize(c.exp_size) | 0
-            mant_final := (!exp_add_m_lz.msb && !exp_eq_lz) ? mant_rounded.resized | U(0, c.mant_size bits)
+            exp_final := ((n4.lz < preround_size + 1) && !exp_add_m_lz.msb) ? exp_add_m_lz.asUInt.resize(
+              o.c.exp_size
+            ) | 0
+            mant_final := (!exp_add_m_lz.msb && !exp_eq_lz) ? mant_rounded.resized | U(0, o.c.mant_size bits)
         }
 
         io.result.sign := sign_final
@@ -166,30 +176,26 @@ class FpxxAdd(c: FpxxConfig, addConfig: FpxxAddConfig = FpxxAddConfig()) extends
         arbitrateTo(io.result)
     }
 
-    val c01 = if (pipeStages >= 3) StageLink(n0, n1) else DirectLink(n0, n1)
-    val c12 = if (pipeStages >= 1) StageLink(n1, n2) else DirectLink(n1, n2)
-    val c23 = if (pipeStages >= 4) StageLink(n2, n3) else DirectLink(n2, n3)
-    val c34 = if (pipeStages >= 2) StageLink(n3, n4) else DirectLink(n3, n4)
-    val c45 = if (pipeStages >= 5) StageLink(n4, n5) else DirectLink(n4, n5)
-    Builder(c01, c12, c23, c34, c45)
+    implicit val maskConfig = StageMask.Config(5, List(1, 3, 0, 2, 4))
+    Builder(o.pipeStages(Seq(n0, n1, n2, n3, n4, n5)))
 }
 
-class FpxxSub(c: FpxxConfig, addConfig: FpxxAddConfig) extends Component {
+class FpxxSub(o: FpxxAdd.Options) extends Component {
 
     val io = new Bundle {
         val op = slave Flow (new Bundle {
-            val a = Fpxx(c)
-            val b = Fpxx(c)
+            val a = Fpxx(o.c)
+            val b = Fpxx(o.c)
         })
-        val result = master Flow (Fpxx(c))
+        val result = master Flow (Fpxx(o.c))
     }
 
-    val op_b = Fpxx(c)
+    val op_b = Fpxx(o.c)
     op_b.sign := !io.op.b.sign
     op_b.exp  := io.op.b.exp
     op_b.mant := io.op.b.mant
 
-    val u_add = new FpxxAdd(c, addConfig)
+    val u_add = new FpxxAdd(o)
     u_add.io.op.valid <> io.op.valid
     u_add.io.op.a <> io.op.a
     u_add.io.op.b <> op_b

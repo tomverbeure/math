@@ -4,17 +4,29 @@ import spinal.core._
 import spinal.lib._
 import spinal.lib.misc.pipeline._
 
+object FpxxConverter {
+    import caseapp._
+
+    case class Options(
+        @HelpMessage(cli.Cli.fpxxConfigHelpMsg)
+        in_config: FpxxConfig,
+        @HelpMessage(cli.Cli.fpxxConfigHelpMsg)
+        out_config: FpxxConfig,
+        @HelpMessage(cli.Cli.stageMaskHelpMsg(4))
+        pipeStages: StageMask = List(false, false, false, false),
+        @HelpMessage(cli.Cli.roundTypeHelpMsg)
+        rounding: RoundType = RoundType.ROUNDTOEVEN
+    ) {}
+}
+
 /* Converts from one Fpxx format to another
  */
 case class FpxxConverter(
-    in_config: FpxxConfig,
-    out_config: FpxxConfig,
-    pipeStages: (Boolean, Boolean, Boolean, Boolean) = (false, false, false, false),
-    rounding: RoundType = RoundType.ROUNDTOEVEN
+    o: FpxxConverter.Options
 ) extends Module {
     val io = new Bundle {
-        val a = slave Flow (Fpxx(in_config))
-        val r = master Flow (Fpxx(out_config))
+        val a = slave Flow (Fpxx(o.in_config))
+        val r = master Flow (Fpxx(o.out_config))
     }
 
     val n0 = new Node {
@@ -61,7 +73,7 @@ case class FpxxConverter(
         val _rounded_mantissa = if (io.a.c.mant_size > io.r.c.mant_size) {
             n2.shifted_mant.fixTo(
               this(n2.shifted_mant).getWidth downto this(n2.shifted_mant).getWidth - io.r.c.mant_size,
-              rounding
+              o.rounding
             )
         } else {
             U(0, 1 bit) ## n1.norm_mant ## U(0, io.r.c.mant_size - io.a.c.mant_size bits)
@@ -102,10 +114,7 @@ case class FpxxConverter(
 
         arbitrateTo(io.r)
     }
-    val c01 = if (pipeStages._1) StageLink(n0, n1) else DirectLink(n0, n1)
-    val c12 = if (pipeStages._2) StageLink(n1, n2) else DirectLink(n1, n2)
-    val c23 = if (pipeStages._3) StageLink(n2, n3) else DirectLink(n2, n3)
-    val c34 = if (pipeStages._4) StageLink(n3, n4) else DirectLink(n3, n4)
 
-    Builder(c01, c12, c23, c34)
+    implicit val maskConfig = StageMask.Config(4, List(0, 1, 2, 3))
+    Builder(o.pipeStages(Seq(n0, n1, n2, n3, n4)))
 }

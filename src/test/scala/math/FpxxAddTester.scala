@@ -16,7 +16,7 @@ object FpxxAddTester {
         val op     = slave Flow (Vec(Fpxx(config), 2))
         val result = master Flow (Fpxx(config))
 
-        val inner = new FpxxAdd(config)
+        val inner = new FpxxAdd(FpxxAdd.Options(config))
         inner.io.op.valid := op.valid
         inner.io.op.a     := op.payload(0)
         inner.io.op.b     := op.payload(1)
