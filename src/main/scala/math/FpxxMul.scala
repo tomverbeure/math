@@ -4,27 +4,33 @@ import spinal.core._
 import spinal.lib._
 import spinal.lib.misc.pipeline._
 
-case class FpxxMulConfig(
-    pipeStages: Int = 1,
-    hwMul: Boolean = false,
-    rounding: RoundType = RoundType.ROUNDTOEVEN
-) {}
+object FpxxMul {
+    import caseapp._
 
-case class FpxxMul(cIn: FpxxConfig, cOut: Option[FpxxConfig] = None, mulConfig: FpxxMulConfig = FpxxMulConfig())
-    extends Component {
+    case class Options(
+        @HelpMessage(cli.Cli.fpxxConfigHelpMsg)
+        cIn: FpxxConfig,
+        @HelpMessage(cli.Cli.fpxxConfigHelpMsg)
+        cOut: Option[FpxxConfig] = None,
+        @HelpMessage(cli.Cli.stageMaskHelpMsg(3))
+        pipeStages: StageMask = 0,
+        @HelpMessage(cli.Cli.roundTypeHelpMsg)
+        rounding: RoundType = RoundType.ROUNDTOEVEN
+    )
+}
 
-    val cOutU      = cOut getOrElse cIn
-    def pipeStages = mulConfig.pipeStages
-    def hwMul      = mulConfig.hwMul
+case class FpxxMul(o: FpxxMul.Options) extends Component {
 
-    assert(0 <= pipeStages && pipeStages <= 2, "Multiplier supports 0, 1 or 2 stage pipeline")
-    assert(cIn.ieee_like && cOutU.ieee_like, "Can only handle IEEE compliant floats")
-    assert(cIn.exp_size == cOutU.exp_size, "Can only handle equal input and output exponents")
+    val cOutU      = o.cOut getOrElse o.cIn
+    def pipeStages = o.pipeStages
+
+    assert(o.cIn.ieee_like && cOutU.ieee_like, "Can only handle IEEE compliant floats")
+    assert(o.cIn.exp_size == cOutU.exp_size, "Can only handle equal input and output exponents")
 
     val io = new Bundle {
         val input = slave Flow (new Bundle {
-            val a = Fpxx(cIn)
-            val b = Fpxx(cIn)
+            val a = Fpxx(o.cIn)
+            val b = Fpxx(o.cIn)
         })
         val result = master Flow (Fpxx(cOutU))
     }
@@ -48,7 +54,7 @@ case class FpxxMul(cIn: FpxxConfig, cOut: Option[FpxxConfig] = None, mulConfig: 
     }
 
     val n1 = new Node {
-        val exp_mul  = insert((n0.a.exp +^ n0.b.exp).intoSInt - cIn.bias)
+        val exp_mul  = insert((n0.a.exp +^ n0.b.exp).intoSInt - o.cIn.bias)
         val mant_mul = insert(n0.mant_a * n0.mant_b)
     }
 
@@ -59,7 +65,7 @@ case class FpxxMul(cIn: FpxxConfig, cOut: Option[FpxxConfig] = None, mulConfig: 
             ((n1.mant_mul @@ U(0, 1 bit)) |>> n1.mant_mul.msb.asUInt)(0, n1.mant_mul.getBitsWidth + 1 - 2 bits)
 
         val mant_mul_rounded =
-            mant_mul_adj.fixTo(mant_mul_adj.getWidth downto mant_mul_adj.getWidth - cOutU.mant_size, mulConfig.rounding)
+            mant_mul_adj.fixTo(mant_mul_adj.getWidth downto mant_mul_adj.getWidth - cOutU.mant_size, o.rounding)
 
         val exp_mul_adj = n1.exp_mul + n1.mant_mul.msb.asUInt.intoSInt + mant_mul_rounded.msb.asUInt.intoSInt
 
@@ -80,7 +86,6 @@ case class FpxxMul(cIn: FpxxConfig, cOut: Option[FpxxConfig] = None, mulConfig: 
         }
     }
 
-    val c01 = if (pipeStages >= 2) StageLink(n0, n1) else DirectLink(n0, n1)
-    val c12 = if (pipeStages >= 1) StageLink(n1, n2) else DirectLink(n1, n2)
-    Builder(c01, c12)
+    implicit val maskConfig = StageMask.Config(2, List(0, 1))
+    Builder(o.pipeStages(Seq(n0, n1, n2)))
 }
