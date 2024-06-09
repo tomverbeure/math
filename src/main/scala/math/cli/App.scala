@@ -71,6 +71,8 @@ object Cli {
 
     case class FpxxMul(@Recurse c: CommonOptions, @Recurse o: math.FpxxMul.Options) extends Command {};
 
+    case class FpxxAccum(@Recurse c: CommonOptions, @Recurse o: math.FpxxAdd.Options) extends Command {};
+
     case class CommonOptions(
         @HelpMessage("Language to generate (vhdl, verilog, systemverilog)")
         language: SpinalMode = Verilog
@@ -85,6 +87,7 @@ object Cli {
                 case FpxxAdd(c, o)       => toConfig(c).generate(new math.FpxxAdd(o))
                 case FpxxConverter(c, o) => toConfig(c).generate(math.FpxxConverter(o))
                 case FpxxMul(c, o)       => toConfig(c).generate(math.FpxxMul(o))
+                case FpxxAccum(c, o)     => toConfig(c).generate(math.FpxxAccum(o))
             }
         }
     }
