@@ -80,7 +80,7 @@ object Cli {
 
     object App extends CommandApp[Command] {
 
-        def toConfig(options: CommonOptions) = SpinalConfig(mode = options.language)
+        def toConfig(options: CommonOptions) = SpinalConfig(mode = options.language, fixToWithWrap = false)
 
         def run(command: Command, arg: RemainingArgs): Unit = {
             command match {
