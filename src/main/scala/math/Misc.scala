@@ -134,7 +134,7 @@ object BundleDebug {
                 todo.foreach { case (dd, f) =>
                     if (dd.isNamed) {
                         val signal = f()
-                        signal.setName(dd.getName() + "__debug")
+                        signal.setWeakName(dd.getName() + "__debug")
                     }
                 }
             }
