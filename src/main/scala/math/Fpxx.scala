@@ -30,12 +30,12 @@ object FpxxConfig {
       signed_zero = false
     )
     def float8_e4m3fnuz = FpxxConfig(
-        4,
-        3,
-        SpecialNan(BigInt("10000000", 2)),
-        inf_encoding = NoInfinity(BigInt("10000000", 2)),
-        exp_bias = CustomBias(8),
-        signed_zero = false
+      4,
+      3,
+      SpecialNan(BigInt("10000000", 2)),
+      inf_encoding = NoInfinity(BigInt("10000000", 2)),
+      exp_bias = CustomBias(8),
+      signed_zero = false
     )
 }
 
@@ -220,6 +220,8 @@ case class FpxxHost(value: BigInt, c: FpxxConfig, maxUlpDist: Int = 0, testZeroS
         (value - other.value).abs
     }
 
+    def setMaxUlpDist(newMaxUlpDist: Int) = FpxxHost(value, c, newMaxUlpDist, testZeroSign)
+
     override def toString = {
         // align to 4 bit boundary
         val mantissa_aligned    = mant << (4 - (c.mant_size % 4))
@@ -239,14 +241,15 @@ case class FpxxHost(value: BigInt, c: FpxxConfig, maxUlpDist: Int = 0, testZeroS
 
     override def equals(other: Any): Boolean = {
         other match {
-            case o @ FpxxHost(_, oc, _, _) =>
+            case o @ FpxxHost(_, oc, _, _) => {
+                val maxUlp = maxUlpDist.max(o.maxUlpDist)
                 c == oc &&
-                (ulpDist(o) <= maxUlpDist ||
+                (ulpDist(o) <= maxUlp ||
                     isNan && o.isNan ||
                     isInf && o.isInf && sign == o.sign ||
                     (!testZeroSign || !o.testZeroSign) && isZero && o.isZero)
+            }
             case _ => false
         }
     }
 }
-
