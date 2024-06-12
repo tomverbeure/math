@@ -150,10 +150,12 @@ object FpxxTesterSupport {
         inputN: Int,
         inConf: FpxxConfig,
         outConf: FpxxConfig,
-        testZeroSign: Boolean = true): Iterator[(List[FpxxHost], FpxxHost)] = {
+        testZeroSign: Boolean = true,
+        maxUlpDist: Int = 0
+    ): Iterator[(List[FpxxHost], FpxxHost)] = {
         lines.map{l =>
             val parts = l.split(" ").map(BigInt(_, 16)).toList
-            (parts.slice(0, inputN).map(FpxxHost(_, inConf, testZeroSign=testZeroSign)).toList, FpxxHost(parts(inputN), outConf, testZeroSign=testZeroSign))
+            (parts.slice(0, inputN).map(FpxxHost(_, inConf, testZeroSign=testZeroSign, maxUlpDist = maxUlpDist)).toList, FpxxHost(parts(inputN), outConf, testZeroSign=testZeroSign, maxUlpDist = maxUlpDist))
         }
     }
 

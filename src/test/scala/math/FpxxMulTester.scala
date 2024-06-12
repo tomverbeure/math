@@ -13,7 +13,7 @@ import spinal.lib.sim.FlowMonitor
 
 object FpxxMulTester extends AnyFunSuite {
     case class FpxxMulDut(config: FpxxConfig) extends Component {
-        val dut = FpxxMul(config, mulConfig = FpxxMulConfig(pipeStages = 2))
+        val dut = FpxxMul(FpxxMul.Options(cIn = config, pipeStages = 2))
 
         val op = slave(Flow(Vec(cloneOf(dut.io.input.payload.a), 2)))
         dut.io.input << op.map { payload =>
@@ -72,17 +72,15 @@ class FpxxMulTester extends AnyFunSuite {
                 val input  = slave Flow (Vec(Fpxx(inConfig), 2))
                 val result = master Flow (Fpxx(outConfig))
 
-                val aConv = FpxxConverter(inConfig, FpxxConfig(8, 2))
-                val bConv = FpxxConverter(inConfig, FpxxConfig(8, 2))
+                val aConv = FpxxConverter(FpxxConverter.Options(inConfig, FpxxConfig(8, 2)))
+                val bConv = FpxxConverter(FpxxConverter.Options(inConfig, FpxxConfig(8, 2)))
                 aConv.io.a.payload := input.payload(0)
                 aConv.io.a.valid   := True
                 bConv.io.a.payload := input.payload(1)
                 bConv.io.a.valid   := True
 
                 val mult = FpxxMul(
-                  FpxxConfig(8, 2),
-                  Some(outConfig),
-                  mulConfig = FpxxMulConfig(pipeStages = 2, rounding = RoundType.FLOOR)
+                  FpxxMul.Options(FpxxConfig(8, 2), Some(outConfig), pipeStages = 2, rounding = RoundType.FLOOR)
                 )
                 mult.io.input.payload.a := aConv.io.r
                 mult.io.input.payload.b := bConv.io.r
