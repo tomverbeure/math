@@ -12,7 +12,8 @@ lazy val root = (project in file(".")).
     )),
     libraryDependencies ++= Seq(
       spinalCore, spinalLib, spinalIdslPlugin,
-      "org.scalatest" %% "scalatest" % "3.2.18" % "test"
+      "org.scalatest" %% "scalatest" % "3.2.18" % "test",
+      "com.github.alexarchambault" %% "case-app" % "2.0.6"
     ),
     name := "Fpxx"
   ).dependsOn()
